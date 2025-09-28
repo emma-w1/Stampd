@@ -6,13 +6,32 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5608A24A2E88807600342C80 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5608A2492E88807600342C80 /* FirebaseAuth */; };
+		5608A24C2E88807600342C80 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5608A24B2E88807600342C80 /* FirebaseCore */; };
+		5608A24E2E88807600342C80 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 5608A24D2E88807600342C80 /* FirebaseFirestore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		5608A2352E88741800342C80 /* Stampd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stampd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5608A2692E899F4800342C80 /* Exceptions for "Stampd" folder in "Stampd" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5608A2342E88741800342C80 /* Stampd */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5608A2372E88741800342C80 /* Stampd */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5608A2692E899F4800342C80 /* Exceptions for "Stampd" folder in "Stampd" target */,
+			);
 			path = Stampd;
 			sourceTree = "<group>";
 		};
@@ -23,6 +42,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5608A24C2E88807600342C80 /* FirebaseCore in Frameworks */,
+				5608A24A2E88807600342C80 /* FirebaseAuth in Frameworks */,
+				5608A24E2E88807600342C80 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +87,9 @@
 			);
 			name = Stampd;
 			packageProductDependencies = (
+				5608A2492E88807600342C80 /* FirebaseAuth */,
+				5608A24B2E88807600342C80 /* FirebaseCore */,
+				5608A24D2E88807600342C80 /* FirebaseFirestore */,
 			);
 			productName = Stampd;
 			productReference = 5608A2352E88741800342C80 /* Stampd.app */;
@@ -94,6 +119,9 @@
 			);
 			mainGroup = 5608A22C2E88741800342C80;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				5608A2482E88807600342C80 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5608A2362E88741800342C80 /* Products */;
 			projectDirPath = "";
@@ -255,6 +283,7 @@
 				DEVELOPMENT_TEAM = N73332Y7U3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Stampd/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -284,6 +313,7 @@
 				DEVELOPMENT_TEAM = N73332Y7U3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Stampd/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -324,6 +354,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5608A2482E88807600342C80 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5608A2492E88807600342C80 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5608A2482E88807600342C80 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		5608A24B2E88807600342C80 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5608A2482E88807600342C80 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		5608A24D2E88807600342C80 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5608A2482E88807600342C80 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5608A22D2E88741800342C80 /* Project object */;
 }
