@@ -10,6 +10,7 @@ import SwiftUI
 enum Tab {
     case discover
     case settings
+    case claim
 }
 
 struct BottomNavbar: View {
@@ -17,7 +18,7 @@ struct BottomNavbar: View {
     
     var body: some View {
         HStack {
-            // Discover Tab
+            // discover
             Button(action: {
                 selectedTab = .discover
             }) {
@@ -27,11 +28,25 @@ struct BottomNavbar: View {
                     Text("Discover")
                         .font(.system(size: 12))
                 }
-                .foregroundColor(selectedTab == .discover ? Color.stampdTextPink : Color.gray)
+                .foregroundColor(selectedTab == .discover ? Color.lightPink : Color.white)
                 .frame(maxWidth: .infinity)
             }
             
-            // Settings Tab
+            // claim
+            Button(action: {
+                selectedTab = .claim
+            }) {
+                VStack(spacing: 5) {
+                    Image(systemName: selectedTab == .claim ? "star.circle.fill" : "star.circle")
+                        .font(.system(size: 24))
+                    Text("Claim")
+                        .font(.system(size: 12))
+                }
+                .foregroundColor(selectedTab == .claim ? Color.lightPink : Color.white)
+                .frame(maxWidth: .infinity)
+            }
+            
+            // settings
             Button(action: {
                 selectedTab = .settings
             }) {
@@ -41,13 +56,13 @@ struct BottomNavbar: View {
                     Text("Settings")
                         .font(.system(size: 12))
                 }
-                .foregroundColor(selectedTab == .settings ? Color.stampdTextPink : Color.gray)
+                .foregroundColor(selectedTab == .settings ? Color.lightPink : Color.white)
                 .frame(maxWidth: .infinity)
             }
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 20)
-        .background(Color.white)
+        .background(Color.stampdTextPink)
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
     }
 }

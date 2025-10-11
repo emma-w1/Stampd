@@ -49,15 +49,11 @@ class AuthManager: ObservableObject {
             DispatchQueue.main.async {
                 if let error = error {
                     print("❌ Error loading user profile: \(error.localizedDescription)")
-                    // Create a default customer profile if profile doesn't exist
-                    self?.createDefaultProfile(uid: uid)
                     return
                 }
                 
                 guard let document = document, document.exists else {
                     print("⚠️ User profile document doesn't exist, creating default profile")
-                    // Create a default customer profile if profile doesn't exist
-                    self?.createDefaultProfile(uid: uid)
                     return
                 }
                 
@@ -67,36 +63,8 @@ class AuthManager: ObservableObject {
                     self?.currentUser = profile
                 } catch {
                     print("❌ Error decoding user profile: \(error.localizedDescription)")
-                    // Create a default customer profile if decoding fails
-                    self?.createDefaultProfile(uid: uid)
                 }
             }
-        }
-    }
-    
-    private func createDefaultProfile(uid: String) {
-        guard let email = Auth.auth().currentUser?.email else {
-            print("❌ Cannot create default profile: no email found")
-            return
-        }
-        
-        let defaultProfile = UserProfile(
-            uid: uid,
-            email: email,
-            phoneNumber: nil,
-            accountType: .customer,
-            createdAt: Date()
-        )
-        
-        let db = Firestore.firestore()
-        do {
-            try db.collection("users").document(uid).setData(from: defaultProfile)
-            self.currentUser = defaultProfile
-            print("✅ Created default customer profile for \(email)")
-        } catch {
-            print("❌ Error creating default profile: \(error.localizedDescription)")
-            // Even if Firestore fails, set the profile in memory so user can continue
-            self.currentUser = defaultProfile
         }
     }
     
@@ -121,15 +89,12 @@ struct StampdApp: App {
         WindowGroup {
             if authManager.isAuthenticated {
                 if let user = authManager.currentUser {
-                    // Show appropriate view based on account type
                     if user.accountType == .customer {
                         MainContentView()
                     } else {
-                        // Business view - placeholder for now
-                        MainContentView() // Replace with BusinessView later
+                        MainContentView()
                     }
-                } else {
-                    // Loading state while user profile loads
+                } else { //loading
                     ZStack {
                         LinearGradient(
                             gradient: Gradient(colors: [Color.stampdGradientTop, Color.stampdGradientBottom]),

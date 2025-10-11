@@ -13,17 +13,18 @@ struct MainContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Main content based on selected tab
+//            manages tab bar at bottom
             ZStack {
                 switch selectedTab {
                 case .discover:
                     DiscoverView()
                 case .settings:
                     SettingsView()
+                case .claim:
+                    ClaimView()
                 }
             }
             
-            // Bottom Navbar
             BottomNavbar(selectedTab: $selectedTab)
         }
         .edgesIgnoringSafeArea(.bottom)

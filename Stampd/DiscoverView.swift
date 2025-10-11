@@ -49,15 +49,18 @@ struct DiscoverView: View {
     
     var body: some View {
         ZStack {
+            TopNavbar()
+            
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // My Stamps Section
+                    Color.clear.frame(height: 50)
+                    
+                    // stamps section
                     Text("My Stamps")
                         .font(.custom("Jersey15-Regular", size: 36))
                         .foregroundColor(Color.stampdTextPink)
                         .padding(.top, 10)
                     
-                    // Horizontal scrollable stamp cards
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 15) {
                             ForEach(stampCards) { card in
@@ -67,13 +70,12 @@ struct DiscoverView: View {
                     }
                     .frame(height: 180)
                     
-                    // Sort By Section
-                    Text("Sort By:")
+                    // businesses section
+                    Text("Discover:")
                         .font(.custom("Jersey15-Regular", size: 36))
                         .foregroundColor(Color.stampdTextPink)
                         .padding(.top, 10)
                     
-                    // Vertical scrollable business cards
                     VStack(spacing: 15) {
                         ForEach(businesses) { business in
                             BusinessCardView(business: business)
@@ -96,13 +98,12 @@ struct DiscoverView: View {
     }
 }
 
-// Individual stamp card view
+//  stamp card
 struct StampCardView: View {
     let card: StampCard
     
     var body: some View {
         VStack(spacing: 10) {
-            // Filler image placeholder
             Rectangle()
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: 140, height: 80)
@@ -113,13 +114,11 @@ struct StampCardView: View {
                         .font(.system(size: 30))
                 )
             
-            // Reward text
             Text(card.reward)
                 .font(.custom("Jersey15-Regular", size: 18))
                 .foregroundColor(.black)
                 .multilineTextAlignment(.center)
             
-            // Stamps away text
             Text("\(card.stampsAway) stamps away")
                 .font(.system(size: 14))
                 .foregroundColor(.gray)
@@ -132,13 +131,12 @@ struct StampCardView: View {
     }
 }
 
-// Individual business card view
+//  business card
 struct BusinessCardView: View {
     let business: Business
     
     var body: some View {
         HStack(spacing: 15) {
-            // Filler image placeholder
             Rectangle()
                 .fill(Color.gray.opacity(0.3))
                 .frame(width: 80, height: 80)
@@ -149,7 +147,6 @@ struct BusinessCardView: View {
                         .font(.system(size: 30))
                 )
             
-            // Business info
             VStack(alignment: .leading, spacing: 5) {
                 Text(business.name)
                     .font(.system(size: 18, weight: .semibold))

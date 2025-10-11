@@ -81,7 +81,6 @@ struct LoginView: View {
             let result = try await Auth.auth().signIn(withEmail: email, password: password)
             let _ = result.user.uid
             
-            // User profile will be loaded automatically by AuthManager
         } catch let error {
             print("Login Error: \(error.localizedDescription)")
             errorMessage = "Login failed. Please check your credentials."

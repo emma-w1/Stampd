@@ -3,7 +3,7 @@
 //  Stampd
 //
 //  Created by Adishree Das on 10/11/25.
-//
+// MADE BY AI FIX LATER!!!
 
 import SwiftUI
 
@@ -13,9 +13,13 @@ struct SettingsView: View {
     
     var body: some View {
         ZStack {
+            TopNavbar(showSearchIcon: false)
+            
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // Header
+                    Color.clear.frame(height: 50)
+                    
+                    // header
                     Text("Settings")
                         .font(.custom("Jersey15-Regular", size: 42))
                         .foregroundColor(Color.stampdTextPink)
