@@ -89,43 +89,33 @@ class StampQRCode:
                 customer_data = customer_doc.to_dict()
                 current_stamps = customer_data.get("currentStamps", 0)
                 stamps_needed = customer_data.get("stampsNeeded", business_data.get("stampsNeeded", 10))
-                
+                claimed = customer_data.get("claimed", False)
+
                 # Add one stamp
                 new_stamp_count = current_stamps + 1
-                
-                # Check if customer has enough stamps for reward
-                reward_claimed = False
-                if new_stamp_count >= stamps_needed:
-                    reward_claimed = True
-                
-                # Update the document
+
+                # Update the document (do NOT auto-claim)
                 update_data = {
                     "currentStamps": new_stamp_count,
-                    "claimed": reward_claimed,
-                    "businessVerified": True
+                    "businessVerified": True,
+                    "claimed": claimed  # keep previous claimed status
                 }
-                
                 customer_doc_ref.update(update_data)
-                
-                # Update business statistics
-                self.update_business_stats(business_id, 1, reward_claimed)
-                
+
+                # Update business statistics (do not increment rewards here)
+                self.update_business_stats(business_id, 1, False)
+
                 print(f"✅ Business {business_name} added stamp for {username}")
                 print(f"📊 Stamps: {new_stamp_count}/{stamps_needed}")
-                
+
                 result = {
                     "success": True,
                     "business_name": business_name,
                     "current_stamps": new_stamp_count,
                     "stamps_needed": stamps_needed,
-                    "reward_earned": reward_claimed,
+                    "reward_earned": False,  # not auto-claimed
                     "message": f"Stamp added! {new_stamp_count}/{stamps_needed} stamps"
                 }
-                
-                if reward_claimed:
-                    result["reward_message"] = f"🎉 {username} has earned a reward at {business_name}!"
-                    print(f"🎉 {username} has earned a reward at {business_name}!")
-                
                 return result
                 
             else:
@@ -317,7 +307,19 @@ class StampQRCode:
             # Save to Firestore
             doc_ref = self.db.collection("qr_codes").document(qr_data["qr_id"])
             doc_ref.set(qr_doc_data)
-            
+
+            # Add universal QR code info to user document
+            user_ref = self.db.collection("users").document(username)
+            user_update = {
+                "username": username,
+                "email": user_email,
+                "universal_qr_id": qr_data["qr_id"],
+                "universal_qr_file_path": filepath,
+                "universal_qr_data": qr_data,
+                "universal_qr_type": "universal"
+            }
+            user_ref.set(user_update, merge=True)
+
             print(f"✅ Generated universal QR code for {username}")
             print(f"📄 File saved: {filepath}")
             print(f"🔗 QR ID: {qr_data['qr_id']}")
