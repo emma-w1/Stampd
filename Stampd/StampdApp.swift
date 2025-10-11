@@ -46,25 +46,74 @@ class AuthManager: ObservableObject {
         let docRef = db.collection("users").document(uid)
         
         docRef.getDocument { [weak self] (document, error) in
+            guard let self = self else { return }
+            
             DispatchQueue.main.async {
                 if let error = error {
                     print("❌ Error loading user profile: \(error.localizedDescription)")
+                    // Still try to create a profile even if there's an error
+                    self.createMissingProfile(uid: uid)
                     return
                 }
                 
-                guard let document = document, document.exists else {
-                    print("⚠️ User profile document doesn't exist, creating default profile")
-                    return
-                }
-                
-                do {
-                    let profile = try document.data(as: UserProfile.self)
-                    print("✅ User profile loaded successfully: \(profile.email)")
-                    self?.currentUser = profile
-                } catch {
-                    print("❌ Error decoding user profile: \(error.localizedDescription)")
+                // Check if profile exists
+                if let document = document, document.exists {
+                    // Profile exists, decode it
+                    do {
+                        let profile = try document.data(as: UserProfile.self)
+                        print("✅ User profile loaded: \(profile.email)")
+                        self.currentUser = profile
+                    } catch {
+                        print("❌ Error decoding user profile: \(error.localizedDescription)")
+                        // Profile is corrupt, recreate it
+                        self.createMissingProfile(uid: uid)
+                    }
+                } else {
+                    // Profile doesn't exist, create it
+                    print("⚠️ User profile doesn't exist in Firestore. Creating now...")
+                    self.createMissingProfile(uid: uid)
                 }
             }
+        }
+    }
+    
+    private func createMissingProfile(uid: String) {
+        guard let currentUser = Auth.auth().currentUser else {
+            print("❌ Cannot create profile: no authenticated user")
+            return
+        }
+        
+        let email = currentUser.email ?? "unknown@email.com"
+        
+        // Create a default customer profile
+        let newProfile = UserProfile(
+            uid: uid,
+            email: email,
+            phoneNumber: nil,
+            accountType: .customer,
+            createdAt: Date()
+        )
+        
+        let db = Firestore.firestore()
+        
+        do {
+            // Save to Firestore
+            try db.collection("users").document(uid).setData(from: newProfile) { [weak self] error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        print("❌ Failed to save profile to Firestore: \(error.localizedDescription)")
+                        // Set the profile anyway so user can continue
+                        self?.currentUser = newProfile
+                    } else {
+                        print("✅ Successfully created profile in Firestore for \(email)")
+                        self?.currentUser = newProfile
+                    }
+                }
+            }
+        } catch {
+            print("❌ Failed to encode profile: \(error.localizedDescription)")
+            // Set the profile anyway so user can continue
+            self.currentUser = newProfile
         }
     }
     
