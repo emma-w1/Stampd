@@ -116,7 +116,6 @@ class StampQRCode:
                     "reward_earned": False,  # not auto-claimed
                     "message": f"Stamp added! {new_stamp_count}/{stamps_needed} stamps"
                 }
-                return result
                 
             else:
                 # Create new customer document for this business
@@ -141,7 +140,7 @@ class StampQRCode:
                 print(f"✅ Business {business_name} created new stamp card for {username}")
                 print(f"📊 Stamps: 1/{business_data.get('stampsNeeded', 10)}")
                 
-                return {
+                result = {
                     "success": True,
                     "customer_username": username,
                     "business_name": business_name,
@@ -151,6 +150,36 @@ class StampQRCode:
                     "new_customer": True,
                     "message": f"New stamp card created! 1/{business_data.get('stampsNeeded', 10)} stamps"
                 }
+            
+            # Find user by email
+            users_ref = self.db.collection("users")
+            user_query = users_ref.where("email", "==", user_email).limit(1)
+            user_docs = list(user_query.stream())
+
+            program_data = {
+                "programs": {
+                    business_id: {
+                        "businessId": business_id,
+                        "businessName": business_name,
+                        "claimed": claimed if customer_doc.exists else False,
+                        "currentStamps": new_stamp_count if customer_doc.exists else 1,
+                        "logoUrl": business_data.get("logoUrl", f"https://example.com/logos/{business_id}.png"),
+                        "prizeOffered": business_data.get("prizeOffered", f"Free item at {business_name}"),
+                        "stampsNeeded": stamps_needed if customer_doc.exists else business_data.get("stampsNeeded", 10),
+                        "uid": qr_data.get("uid", None),
+                        "qr_code_data": qr_data
+                    }
+                }
+            }
+
+            if user_docs:
+                # Only update existing user document (never create new)
+                user_doc_ref = users_ref.document(user_docs[0].id)
+                user_doc_ref.set(program_data, merge=True)
+            else:
+                print(f"⚠️ No user found with email {user_email}. Not creating a new user document.")
+                
+            return result
                 
         except json.JSONDecodeError:
             return {"success": False, "error": "Invalid QR code format"}
@@ -308,19 +337,23 @@ class StampQRCode:
             doc_ref = self.db.collection("qr_codes").document(qr_data["qr_id"])
             doc_ref.set(qr_doc_data)
 
-            # Add universal QR code info to user document
-            user_ref = self.db.collection("users").document(username)
-            user_update = {
-                "username": username,
-                "email": user_email,
-                "universal_qr_id": qr_data["qr_id"],
-                "universal_qr_file_path": filepath,
-                "universal_qr_data": qr_data,
-                "universal_qr_type": "universal"
-            }
-            user_ref.set(user_update, merge=True)
-
-            print(f"✅ Generated universal QR code for {username}")
+            # Find user by email
+            users_ref = self.db.collection("users")
+            user_query = users_ref.where("email", "==", user_email).limit(1)
+            user_docs = list(user_query.stream())
+            if user_docs:
+                user_doc_ref = users_ref.document(user_docs[0].id)
+                user_update = {
+                    "universal_qr_id": qr_data["qr_id"],
+                    "universal_qr_file_path": filepath,
+                    "universal_qr_data": qr_data,
+                    "universal_qr_type": "universal"
+                }
+                user_doc_ref.set(user_update, merge=True)
+                print(f"✅ Updated universal QR code info for {username} (email: {user_email})")
+            else:
+                print(f"⚠️ No user found with email {user_email}. Not creating a new user document.")
+            
             print(f"📄 File saved: {filepath}")
             print(f"🔗 QR ID: {qr_data['qr_id']}")
             print(f"🌐 This QR code works at ALL businesses!")
@@ -529,7 +562,7 @@ def main():
     
     qr_data_json = json.dumps(universal_qr["qr_data"])
     
-    for business_id, business_name in businesses:
+    for business_id, business_name, _ in businesses:
         print(f"\n🏪 {business_name} scanning customer QR code...")
         
         # Use the new business scanning method
@@ -577,14 +610,6 @@ def main():
             print(f"  • {card['business_name']}: {card['current_stamps']}/{card['stamps_needed']} {status}")
     else:
         print(f"❌ Error getting stamp cards: {user_cards['error']}")
-    
-    print(f"\n🌐 The same QR code file can be used at ALL businesses!")
-    print(f"📄 QR Code file: {universal_qr['file_path']}")
-    print("\n🏪 Business Features Added:")
-    print("   • Business can scan customer QR codes")
-    print("   • Automatic stamp addition to correct business")
-    print("   • Business statistics tracking")
-    print("   • Business dashboard with analytics")
-
+ 
 if __name__ == "__main__":
     main()
