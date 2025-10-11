@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
 
 // Filler data for stamps
 struct StampCard: Identifiable {
@@ -15,17 +16,84 @@ struct StampCard: Identifiable {
     let stampsAway: Int
 }
 
-// Filler data for businesses
-struct Business: Identifiable {
-    let id = UUID()
-    let name: String
-    let distance: Double
-    let rating: Double
+struct Business: Identifiable, Codable {
+    var id: String?
+    let businessId: String
+    let businessName: String
+    let location: String
     let category: String
+    let logoUrl: String
+    let description: String
+    let email: String
+    let phoneNumber: String
+    let hours: String
+    let prizeOffered: String
+    let stampsNeeded: Int
+    let minimumPurchase: Double
+    let accountType: String
+    let createdAt: Date
+    let totalCustomers: Int
+    let totalStampsGiven: Int
+    let rewardsRedeemed: Int
+}
+
+class BusinessDataFetcher: ObservableObject{
+    @Published var businesses: [Business] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    
+    private var db = Firestore.firestore()
+    
+    init() {
+        fetchBusinesses()
+    }
+    
+    func fetchBusinesses() {
+        print("🔍 Fetching businesses from Firebase...")
+        isLoading = true
+        errorMessage = nil
+        
+        db.collection("businesses").getDocuments { [weak self] (querySnapshot, error) in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                if let error = error {
+                    print("❌ Error fetching businesses: \(error.localizedDescription)")
+                    self.errorMessage = "Failed to fetch businesses."
+                    return
+                }
+                
+                guard let documents = querySnapshot?.documents else {
+                    print("⚠️ No documents found in businesses collection")
+                    self.businesses = []
+                    return
+                }
+                
+                print("📦 Found \(documents.count) business documents")
+                
+                self.businesses = documents.compactMap { document in
+                    do {
+                        var business = try document.data(as: Business.self)
+                        business.id = document.documentID
+                        print("✅ Loaded: \(business.businessName)")
+                        return business
+                    } catch {
+                        print("❌ Decoding error for \(document.documentID): \(error)")
+                        return nil
+                    }
+                }
+                
+                print("✅ Successfully loaded \(self.businesses.count) businesses")
+            }
+        }
+    }
 }
 
 struct DiscoverView: View {
     @EnvironmentObject var authManager: AuthManager
+    @StateObject var dataFetcher = BusinessDataFetcher()
     
     // Filler data
     let stampCards = [
@@ -34,17 +102,6 @@ struct DiscoverView: View {
         StampCard(businessName: "Ice Cream", reward: "FREE SCOOP", stampsAway: 2),
         StampCard(businessName: "Burger Joint", reward: "FREE BURGER", stampsAway: 7),
         StampCard(businessName: "Smoothie Bar", reward: "FREE SMOOTHIE", stampsAway: 4)
-    ]
-    
-    let businesses = [
-        Business(name: "Starbucks", distance: 0.5, rating: 4.5, category: "Coffee"),
-        Business(name: "Joe's Pizza", distance: 1.2, rating: 4.8, category: "Pizza"),
-        Business(name: "Sweet Treats", distance: 0.8, rating: 4.3, category: "Dessert"),
-        Business(name: "The Burger Place", distance: 2.1, rating: 4.6, category: "Burgers"),
-        Business(name: "Fresh Smoothies", distance: 0.3, rating: 4.7, category: "Drinks"),
-        Business(name: "Thai Kitchen", distance: 1.5, rating: 4.4, category: "Thai"),
-        Business(name: "Sushi Express", distance: 1.8, rating: 4.9, category: "Sushi"),
-        Business(name: "Taco Fiesta", distance: 0.7, rating: 4.2, category: "Mexican")
     ]
     
     var body: some View {
@@ -76,12 +133,26 @@ struct DiscoverView: View {
                         .foregroundColor(Color.stampdTextPink)
                         .padding(.top, 10)
                     
-                    VStack(spacing: 15) {
-                        ForEach(businesses) { business in
-                            BusinessCardView(business: business)
+                    if dataFetcher.isLoading {
+                        ProgressView("Fetching nearby businesses...")
+                            .padding(.vertical, 50)
+                            .frame(maxWidth: .infinity)
+                    } else if let error = dataFetcher.errorMessage {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .padding(.vertical, 50)
+                    } else if dataFetcher.businesses.isEmpty {
+                        Text("No businesses found")
+                            .foregroundColor(.gray)
+                            .padding(.vertical, 50)
+                    } else {
+                        VStack(spacing: 15) {
+                            ForEach(dataFetcher.businesses) { business in
+                                BusinessCardView(business: business)
+                            }
                         }
+                        .padding(.bottom, 20)
                     }
-                    .padding(.bottom, 20)
                 }
                 .padding(25)
             }
@@ -137,38 +208,69 @@ struct BusinessCardView: View {
     
     var body: some View {
         HStack(spacing: 15) {
-            Rectangle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 80, height: 80)
-                .cornerRadius(8)
-                .overlay(
-                    Image(systemName: "storefront")
-                        .foregroundColor(.gray)
-                        .font(.system(size: 30))
-                )
+            // Business logo from URL
+            AsyncImage(url: URL(string: business.logoUrl)) { phase in
+                switch phase {
+                case .empty:
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 80, height: 80)
+                        .cornerRadius(8)
+                        .overlay(
+                            ProgressView()
+                        )
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 80, height: 80)
+                        .cornerRadius(8)
+                        .clipped()
+                case .failure:
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 80, height: 80)
+                        .cornerRadius(8)
+                        .overlay(
+                            Image(systemName: "storefront")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 30))
+                        )
+                @unknown default:
+                    EmptyView()
+                }
+            }
             
+            // Business info
             VStack(alignment: .leading, spacing: 5) {
-                Text(business.name)
+                Text(business.businessName)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.black)
                 
-                Text("\(String(format: "%.1f", business.distance)) miles away")
+                Text(business.location)
                     .font(.system(size: 14))
                     .foregroundColor(.gray)
+                    .lineLimit(1)
                 
                 HStack(spacing: 10) {
+                    // Category tag
+                    Text(business.category)
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.stampdTextPink)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.stampdPinkLight)
+                        .cornerRadius(8)
+                    
+                    // Stamps needed
                     HStack(spacing: 3) {
                         Image(systemName: "star.fill")
-                            .foregroundColor(.yellow)
+                            .foregroundColor(Color.stampdTextPink)
+                            .font(.system(size: 10))
+                        Text("\(business.stampsNeeded) stamps")
                             .font(.system(size: 12))
-                        Text(String(format: "%.1f", business.rating))
-                            .font(.system(size: 14))
-                            .foregroundColor(.black)
+                            .foregroundColor(.gray)
                     }
-                    
-                    Text(business.category)
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
                 }
             }
             
