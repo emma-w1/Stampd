@@ -23,6 +23,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 class AuthManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: UserProfile?
+    @Published var businessNeedsOnboarding = false
     
     init() {
         checkAuthState()
@@ -63,6 +64,11 @@ class AuthManager: ObservableObject {
                         let profile = try document.data(as: UserProfile.self)
                         print("✅ User profile loaded: \(profile.email)")
                         self.currentUser = profile
+                        
+                        // If business account, check if they need onboarding
+                        if profile.accountType == .business {
+                            self.checkBusinessOnboarding(uid: uid)
+                        }
                     } catch {
                         print("❌ Error decoding user profile: \(error.localizedDescription)")
                         // Profile is corrupt, recreate it
@@ -72,6 +78,28 @@ class AuthManager: ObservableObject {
                     // Profile doesn't exist, create it
                     print("⚠️ User profile doesn't exist in Firestore. Creating now...")
                     self.createMissingProfile(uid: uid)
+                }
+            }
+        }
+    }
+    
+    private func checkBusinessOnboarding(uid: String) {
+        let db = Firestore.firestore()
+        
+        db.collection("businesses").document(uid).getDocument { [weak self] (document, error) in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("❌ Error checking business document: \(error.localizedDescription)")
+                    self?.businessNeedsOnboarding = true
+                    return
+                }
+                
+                if let document = document, document.exists {
+                    print("✅ Business profile exists")
+                    self?.businessNeedsOnboarding = false
+                } else {
+                    print("⚠️ Business needs to complete onboarding")
+                    self?.businessNeedsOnboarding = true
                 }
             }
         }
@@ -141,7 +169,12 @@ struct StampdApp: App {
                     if user.accountType == .customer {
                         MainContentView()
                     } else {
-                        BusinessMainContentView()
+                        // Business account
+                        if authManager.businessNeedsOnboarding {
+                            BusinessOnboardingView()
+                        } else {
+                            BusinessMainContentView()
+                        }
                     }
                 } else { //loading
                     ZStack {

@@ -49,6 +49,25 @@ struct SettingsView: View {
                         .background(Color.white)
                         .cornerRadius(12)
                         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                        
+                        // how to section (customers only)
+                        if user.accountType == .customer {
+                            VStack(alignment: .leading, spacing: 15) {
+                                Text("How To")
+                                    .font(.custom("Jersey15-Regular", size: 28))
+                                    .foregroundColor(Color.stampdTextPink)
+                                
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HowToStep(number: "1", text: "Join loyalty programs through the Discover page")
+                                    HowToStep(number: "2", text: "Collect stamps by showing cashiers your QR code when checking out")
+                                    HowToStep(number: "3", text: "Redeem free prize when you collect enough stamps by scanning your QR code")
+                                }
+                            }
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                        }
                     }
                     
                     // logout
@@ -117,6 +136,28 @@ struct SettingsRow: View {
             }
             
             Spacer()
+        }
+    }
+}
+
+// how to step component
+struct HowToStep: View {
+    let number: String
+    let text: String
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(number)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 22, height: 22)
+                .background(Color.stampdTextPink)
+                .clipShape(Circle())
+            
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundColor(.gray)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

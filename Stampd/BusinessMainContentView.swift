@@ -14,7 +14,6 @@ struct BusinessMainContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Main content based on selected tab
             ZStack {
                 switch selectedTab {
                 case .discover:

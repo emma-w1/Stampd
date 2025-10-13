@@ -86,7 +86,7 @@ struct BusinessView: View {
                     .padding(.horizontal, 25)
                     
                     // loyalty Program description
-                    Text("Loyalty Program")
+                    Text("Stamp Programs")
                         .font(.custom("Jersey15-Regular", size: 36))
                         .foregroundColor(Color.stampdTextPink)
                         .frame(maxWidth: .infinity, alignment: .leading)
