@@ -141,7 +141,7 @@ struct StampdApp: App {
                     if user.accountType == .customer {
                         MainContentView()
                     } else {
-                        MainContentView()
+                        BusinessMainContentView()
                     }
                 } else { //loading
                     ZStack {

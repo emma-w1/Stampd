@@ -25,6 +25,7 @@ struct UserProfile: Identifiable, Codable {
     }
 }
 
+//empty fields for now
 struct LoginView: View {
         @State private var email = ""
         @State private var password = ""
@@ -37,6 +38,7 @@ struct LoginView: View {
         
         @EnvironmentObject var authManager: AuthManager
         
+    //sign up function
     private func signUp() async {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please enter an email and a password."
@@ -68,6 +70,7 @@ struct LoginView: View {
         isLoading = false
     }
     
+    //signing in
     private func signIn() async {
         guard !email.isEmpty, !password.isEmpty else {
             errorMessage = "Please enter an email and a password."
@@ -92,6 +95,7 @@ struct LoginView: View {
     
     var body: some View {
         ZStack {
+            //shows form items (emailpassword)
                 VStack(spacing: 20) {
                     Spacer()
                     Image("StampdLogo")
@@ -126,7 +130,7 @@ struct LoginView: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color.stampdTextPink, lineWidth: 2)
                             )
-                        
+                        //enter phone number only when signing up
                         if isSigningUp {
                             Text("phone number")
                                 .font(.custom("Jersey15-Regular", size: 34))
@@ -144,7 +148,7 @@ struct LoginView: View {
                         }
                     }
                     .disabled(isLoading)
-                
+                //enter account type only when signing up
                     if isSigningUp {
                         VStack(alignment: .leading) {
                                 Picker("Account Type", selection: $selectedAccountType) {
@@ -166,6 +170,7 @@ struct LoginView: View {
                             .padding(.vertical, 5)
                     }
                     
+                    //manage sign up vs/sign in
                     Button(action: {
                         Task {
                             if isSigningUp {
@@ -216,6 +221,7 @@ struct LoginView: View {
                     .ignoresSafeArea()
                 )
             
+            //loading page
             if isLoading {
                 ProgressView("Processing...")
                     .padding()

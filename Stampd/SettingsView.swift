@@ -3,7 +3,6 @@
 //  Stampd
 //
 //  Created by Adishree Das on 10/11/25.
-// MADE BY AI FIX LATER!!!
 
 import SwiftUI
 
@@ -13,11 +12,17 @@ struct SettingsView: View {
     
     var body: some View {
         ZStack {
-            TopNavbar(showSearchIcon: false)
+            LinearGradient(
+                gradient: Gradient(colors: [Color.stampdGradientTop, Color.stampdGradientBottom]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
             ScrollView {
+                TopNavbar(showSearchIcon: false)
+
                 VStack(alignment: .leading, spacing: 20) {
-                    Color.clear.frame(height: 50)
                     
                     // header
                     Text("Settings")
@@ -25,7 +30,7 @@ struct SettingsView: View {
                         .foregroundColor(Color.stampdTextPink)
                         .padding(.top, 10)
                     
-                    // User Info Section
+                    // user info
                     if let user = authManager.currentUser {
                         VStack(alignment: .leading, spacing: 15) {
                             Text("Account Info")
@@ -46,7 +51,7 @@ struct SettingsView: View {
                         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
                     }
                     
-                    // Logout Button
+                    // logout
                     Button(action: {
                         showLogoutAlert = true
                     }) {
@@ -90,7 +95,7 @@ struct SettingsView: View {
     }
 }
 
-// Helper view for settings rows
+// organize setting rows
 struct SettingsRow: View {
     let icon: String
     let title: String

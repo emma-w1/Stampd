@@ -8,7 +8,7 @@
 import SwiftUI
 import FirebaseFirestore
 
-// Filler data for stamps
+// filler stamp info for now
 struct StampCard: Identifiable {
     let id = UUID()
     let businessName: String
@@ -16,6 +16,7 @@ struct StampCard: Identifiable {
     let stampsAway: Int
 }
 
+//all business info from firebase
 struct Business: Identifiable, Codable {
     var id: String?
     let businessId: String
@@ -37,6 +38,7 @@ struct Business: Identifiable, Codable {
     let rewardsRedeemed: Int
 }
 
+//get firebase business info
 class BusinessDataFetcher: ObservableObject{
     @Published var businesses: [Business] = []
     @Published var isLoading = false
@@ -47,7 +49,6 @@ class BusinessDataFetcher: ObservableObject{
     init() {
         fetchBusinesses()
     }
-    
     func fetchBusinesses() {
         print("🔍 Fetching businesses from Firebase...")
         isLoading = true
@@ -95,7 +96,7 @@ struct DiscoverView: View {
     @EnvironmentObject var authManager: AuthManager
     @StateObject var dataFetcher = BusinessDataFetcher()
     
-    // Filler data
+    //filler stamps for now
     let stampCards = [
         StampCard(businessName: "Coffee Shop", reward: "FREE COFFEE", stampsAway: 3),
         StampCard(businessName: "Pizza Place", reward: "FREE PIZZA", stampsAway: 5),
@@ -106,15 +107,21 @@ struct DiscoverView: View {
     
     var body: some View {
         ZStack {
-            TopNavbar()
+            LinearGradient(
+                gradient: Gradient(colors: [Color.stampdGradientTop, Color.stampdGradientBottom]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
             
             ScrollView {
+                TopNavbar()
                 VStack(alignment: .leading, spacing: 20) {
-                    Color.clear.frame(height: 50)
                     
                     // stamps section
                     Text("My Stamps")
-                        .font(.custom("Jersey15-Regular", size: 36))
+                        .font(.custom("Jersey15-Regular", size: 42))
                         .foregroundColor(Color.stampdTextPink)
                         .padding(.top, 10)
                     
@@ -129,7 +136,7 @@ struct DiscoverView: View {
                     
                     // businesses section
                     Text("Discover:")
-                        .font(.custom("Jersey15-Regular", size: 36))
+                        .font(.custom("Jersey15-Regular", size: 42))
                         .foregroundColor(Color.stampdTextPink)
                         .padding(.top, 10)
                     
@@ -157,14 +164,6 @@ struct DiscoverView: View {
                 .padding(25)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.stampdGradientTop, Color.stampdGradientBottom]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
         }
     }
 }
@@ -208,7 +207,7 @@ struct BusinessCardView: View {
     
     var body: some View {
         HStack(spacing: 15) {
-            // Business logo from URL
+            // logo from url
             AsyncImage(url: URL(string: business.logoUrl)) { phase in
                 switch phase {
                 case .empty:
@@ -241,7 +240,7 @@ struct BusinessCardView: View {
                 }
             }
             
-            // Business info
+            // business info
             VStack(alignment: .leading, spacing: 5) {
                 Text(business.businessName)
                     .font(.system(size: 18, weight: .semibold))
@@ -253,7 +252,6 @@ struct BusinessCardView: View {
                     .lineLimit(1)
                 
                 HStack(spacing: 10) {
-                    // Category tag
                     Text(business.category)
                         .font(.system(size: 12))
                         .foregroundColor(Color.stampdTextPink)
@@ -262,7 +260,6 @@ struct BusinessCardView: View {
                         .background(Color.stampdPinkLight)
                         .cornerRadius(8)
                     
-                    // Stamps needed
                     HStack(spacing: 3) {
                         Image(systemName: "star.fill")
                             .foregroundColor(Color.stampdTextPink)
