@@ -8,14 +8,14 @@
 import SwiftUI
 import FirebaseFirestore
 
-// Import Business from DiscoverView if needed, or redefine minimal version here
 
+//business
 struct BusinessView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showingScanView = false
     @State private var showingEditView = false
-    @State private var rewardsToday = 12//placeholder
-    @State private var stampsToday = 45 //placeholder
+    @State private var rewardsToday = 12
+    @State private var stampsToday = 45
     @State private var businessData: Business?
     @State private var isLoadingBusiness = true
     
@@ -185,6 +185,12 @@ struct BusinessView: View {
                 BusinessEditView(business: business)
             }
         }
+        .onChange(of: showingEditView) { oldValue, newValue in
+            // Refresh data when edit sheet is dismissed
+            if oldValue == true && newValue == false {
+                fetchBusinessData()
+            }
+        }
         .onAppear {
             fetchBusinessData()
         }
@@ -192,34 +198,21 @@ struct BusinessView: View {
     
     func fetchBusinessData() {
         guard let uid = authManager.currentUser?.uid else {
-            print("❌ No user ID found")
             isLoadingBusiness = false
             return
         }
         
         db.collection("businesses").document(uid).getDocument { (document, error) in
-            if let error = error {
-                print("❌ Error fetching business: \(error.localizedDescription)")
-                isLoadingBusiness = false
+            guard let document = document,
+                  document.exists,
+                  var business = try? document.data(as: Business.self) else {
+                self.isLoadingBusiness = false
                 return
             }
             
-            guard let document = document, document.exists else {
-                print("⚠️ Business document not found")
-                isLoadingBusiness = false
-                return
-            }
-            
-            do {
-                var business = try document.data(as: Business.self)
-                business.id = document.documentID
-                businessData = business
-                print("✅ Business data loaded: \(business.businessName)")
-            } catch {
-                print("❌ Error decoding business: \(error)")
-            }
-            
-            isLoadingBusiness = false
+            business.id = document.documentID
+            self.businessData = business
+            self.isLoadingBusiness = false
         }
     }
 }

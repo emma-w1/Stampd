@@ -2,7 +2,7 @@
 //  BottomNavbar.swift
 //  Stampd
 //
-//  Created by Adishree Das on 10/11/25.
+//  Created by Adishree Das on 10/13/25.
 //
 
 import SwiftUI
@@ -18,10 +18,7 @@ struct BottomNavbar: View {
     
     var body: some View {
         HStack {
-            // discover
-            Button(action: {
-                selectedTab = .discover
-            }) {
+            Button(action: { selectedTab = .discover }) {
                 VStack(spacing: 5) {
                     Image(systemName: selectedTab == .discover ? "house.fill" : "house")
                         .font(.system(size: 24))
@@ -32,10 +29,7 @@ struct BottomNavbar: View {
                 .frame(maxWidth: .infinity)
             }
             
-            // claim
-            Button(action: {
-                selectedTab = .claim
-            }) {
+            Button(action: { selectedTab = .claim }) {
                 VStack(spacing: 5) {
                     Image(systemName: selectedTab == .claim ? "star.circle.fill" : "star.circle")
                         .font(.system(size: 24))
@@ -46,10 +40,7 @@ struct BottomNavbar: View {
                 .frame(maxWidth: .infinity)
             }
             
-            // settings
-            Button(action: {
-                selectedTab = .settings
-            }) {
+            Button(action: { selectedTab = .settings }) {
                 VStack(spacing: 5) {
                     Image(systemName: selectedTab == .settings ? "gearshape.fill" : "gearshape")
                         .font(.system(size: 24))

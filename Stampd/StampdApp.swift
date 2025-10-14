@@ -14,7 +14,6 @@ import FirebaseFirestore
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
-        print("✅ Firebase successfully configured.")
         return true
     }
 }
@@ -62,21 +61,16 @@ class AuthManager: ObservableObject {
                     // Profile exists, decode it
                     do {
                         let profile = try document.data(as: UserProfile.self)
-                        print("✅ User profile loaded: \(profile.email)")
                         self.currentUser = profile
                         
-                        // If business account, check if they need onboarding
                         if profile.accountType == .business {
                             self.checkBusinessOnboarding(uid: uid)
                         }
                     } catch {
-                        print("❌ Error decoding user profile: \(error.localizedDescription)")
-                        // Profile is corrupt, recreate it
+                        print("❌ Profile decode error: \(error.localizedDescription)")
                         self.createMissingProfile(uid: uid)
                     }
                 } else {
-                    // Profile doesn't exist, create it
-                    print("⚠️ User profile doesn't exist in Firestore. Creating now...")
                     self.createMissingProfile(uid: uid)
                 }
             }
@@ -88,35 +82,17 @@ class AuthManager: ObservableObject {
         
         db.collection("businesses").document(uid).getDocument { [weak self] (document, error) in
             DispatchQueue.main.async {
-                if let error = error {
-                    print("❌ Error checking business document: \(error.localizedDescription)")
-                    self?.businessNeedsOnboarding = true
-                    return
-                }
-                
-                if let document = document, document.exists {
-                    print("✅ Business profile exists")
-                    self?.businessNeedsOnboarding = false
-                } else {
-                    print("⚠️ Business needs to complete onboarding")
-                    self?.businessNeedsOnboarding = true
-                }
+                self?.businessNeedsOnboarding = !(document?.exists ?? false)
             }
         }
     }
     
     private func createMissingProfile(uid: String) {
-        guard let currentUser = Auth.auth().currentUser else {
-            print("❌ Cannot create profile: no authenticated user")
-            return
-        }
+        guard let currentUser = Auth.auth().currentUser else { return }
         
-        let email = currentUser.email ?? "unknown@email.com"
-        
-        // Create a default customer profile
         let newProfile = UserProfile(
             uid: uid,
-            email: email,
+            email: currentUser.email ?? "unknown@email.com",
             phoneNumber: nil,
             accountType: .customer,
             createdAt: Date()
@@ -125,22 +101,12 @@ class AuthManager: ObservableObject {
         let db = Firestore.firestore()
         
         do {
-            // Save to Firestore
             try db.collection("users").document(uid).setData(from: newProfile) { [weak self] error in
                 DispatchQueue.main.async {
-                    if let error = error {
-                        print("❌ Failed to save profile to Firestore: \(error.localizedDescription)")
-                        // Set the profile anyway so user can continue
-                        self?.currentUser = newProfile
-                    } else {
-                        print("✅ Successfully created profile in Firestore for \(email)")
-                        self?.currentUser = newProfile
-                    }
+                    self?.currentUser = newProfile
                 }
             }
         } catch {
-            print("❌ Failed to encode profile: \(error.localizedDescription)")
-            // Set the profile anyway so user can continue
             self.currentUser = newProfile
         }
     }

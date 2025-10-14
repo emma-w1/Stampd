@@ -2,7 +2,7 @@
 //  MainContentView.swift
 //  Stampd
 //
-//  Created by Adishree Das on 10/11/25.
+//  Created by Adishree Das on 10/13/25.
 //
 
 import SwiftUI
@@ -13,16 +13,13 @@ struct MainContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-//            manages tab bar at bottom
-            ZStack {
-                switch selectedTab {
-                case .discover:
-                    DiscoverView()
-                case .settings:
-                    SettingsView()
-                case .claim:
-                    ClaimView()
-                }
+            switch selectedTab {
+            case .discover:
+                DiscoverView()
+            case .settings:
+                SettingsView()
+            case .claim:
+                ClaimView()
             }
             
             BottomNavbar(selectedTab: $selectedTab)

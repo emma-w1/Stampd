@@ -10,22 +10,6 @@ import FirebaseAuth
 import FirebaseFirestore
 import FirebaseCore
 
-//user profile data
-struct UserProfile: Identifiable, Codable {
-    @DocumentID var id: String?
-    let uid: String
-    let email: String
-    let phoneNumber: String?
-    let accountType: AccountType
-    let createdAt: Date
-    
-    enum AccountType: String, Codable, CaseIterable {
-        case customer = "Customer"
-        case business = "Business"
-    }
-}
-
-//empty fields for now
 struct LoginView: View {
         @State private var email = ""
         @State private var password = ""
@@ -50,21 +34,16 @@ struct LoginView: View {
         
         do {
             let result = try await Auth.auth().createUser(withEmail: email, password: password)
-            let uid = result.user.uid
-            
             let newProfile = UserProfile(
-                uid: uid,
+                uid: result.user.uid,
                 email: email,
                 phoneNumber: phoneNumber.isEmpty ? nil : phoneNumber,
                 accountType: selectedAccountType,
                 createdAt: Date()
             )
-            
-            let db = Firestore.firestore()
-            try db.collection("users").document(uid).setData(from: newProfile)
-        } catch let error {
-            print("Sign Up Error: \(error.localizedDescription)")
-            errorMessage = "Sign Up failed. \(error.localizedDescription)"
+            try Firestore.firestore().collection("users").document(result.user.uid).setData(from: newProfile)
+        } catch {
+            errorMessage = "Sign up failed. \(error.localizedDescription)"
         }
         
         isLoading = false

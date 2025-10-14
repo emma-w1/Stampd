@@ -45,37 +45,8 @@ struct BusinessInfoView: View {
                 
                 ScrollView {
                     VStack {
-                        //print all business info
                         VStack(spacing: 15) {
-                            AsyncImage(url: URL(string: business.logoUrl)) { phase in
-                                switch phase {
-                                case .empty:
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
-                                        .frame(width: 120, height: 120)
-                                        .cornerRadius(20)
-                                        .overlay(ProgressView())
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 120, height: 120)
-                                        .cornerRadius(20)
-                                        .clipped()
-                                case .failure:
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
-                                        .frame(width: 120, height: 120)
-                                        .cornerRadius(20)
-                                        .overlay(
-                                            Image(systemName: "storefront")
-                                                .foregroundColor(.gray)
-                                                .font(.system(size: 40))
-                                        )
-                                @unknown default:
-                                    EmptyView()
-                                }
-                            }
+                            BusinessLogoView(logoUrl: business.logoUrl, size: 120, cornerRadius: 20)
                             
                             Text(business.businessName)
                                 .font(.custom("Jersey15-Regular", size: 36))
@@ -230,14 +201,10 @@ struct BusinessInfoView: View {
         db.collection("users").document(customerId).collection("programs")
             .document(business.businessId)
             .setData(programData) { error in
-                if let error = error {
-                    print("❌ Error joining program: \(error.localizedDescription)")
-                    return
-                }
-                
-                print("✅ Successfully joined program for \(business.businessName)")
-                withAnimation {
-                    isJoined = true
+                if error == nil {
+                    withAnimation {
+                        isJoined = true
+                    }
                 }
             }
     }

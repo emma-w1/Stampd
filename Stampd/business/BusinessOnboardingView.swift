@@ -8,22 +8,11 @@
 import SwiftUI
 import FirebaseFirestore
 
-enum BusinessCategory: String, CaseIterable, Hashable {
-    case foodDrink = "Food & Drink"
-    case retailApparel = "Retail & Apparel"
-    case beautyWellness = "Beauty & Wellness"
-    case entertainment = "Entertainment"
-    case localServices = "Local Services"
-    case other = "Other"
-    
-    var id: String { self.rawValue }
-}
-
 struct BusinessOnboardingView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showLogoutAlert = false
     
-    @State private var currentPage = 1 // Track which page we're on
+    @State private var currentPage = 1
     
     @State private var businessName = ""
     @State private var category: BusinessCategory = .foodDrink
@@ -36,6 +25,7 @@ struct BusinessOnboardingView: View {
     @State private var logoUrl = ""
     @State private var selectedImage: UIImage?
     @State private var showImagePicker = false
+    @State private var isUploadingImage = false
     
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -50,7 +40,7 @@ struct BusinessOnboardingView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Top bar with back button
+                // top bar with back button
                 HStack {
                     Button(action: {
                         showLogoutAlert = true
@@ -77,11 +67,10 @@ struct BusinessOnboardingView: View {
                             .frame(width: 100)
                             .padding(.top, 10)
                         
+                        //switch between pages
                         if currentPage == 1 {
-                        // Page 1: Business Info
                         businessInfoPage
                     } else {
-                        // Page 2: Stamp Program
                         stampProgramPage
                     }
                     
@@ -101,7 +90,7 @@ struct BusinessOnboardingView: View {
             }
         }
         .sheet(isPresented: $showImagePicker) {
-            ImagePicker(selectedImage: $selectedImage, logoUrl: $logoUrl)
+            ImagePicker(selectedImage: $selectedImage, logoUrl: $logoUrl, isUploading: $isUploadingImage)
         }
         .alert("Go Back to Login?", isPresented: $showLogoutAlert) {
             Button("Cancel", role: .cancel) { }
@@ -113,6 +102,8 @@ struct BusinessOnboardingView: View {
         }
     }
     
+    
+    //page 1
     var businessInfoPage: some View {
         Group {
             Group {
@@ -136,6 +127,8 @@ struct BusinessOnboardingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .foregroundColor(Color.stampdTextPink)
                             .padding(.bottom, 5)
+                
+                    //dropdown picker
                         Menu {
                             ForEach(BusinessCategory.allCases, id: \.self) { cat in
                                 Button(action: {
@@ -214,7 +207,7 @@ struct BusinessOnboardingView: View {
                             .multilineTextAlignment(.center)
                             .padding(.vertical, 5)
                     }
-                    
+                    //next button
                     Button(action: {
                         validateAndGoToPage2()
                     }) {
@@ -231,6 +224,8 @@ struct BusinessOnboardingView: View {
                 }
             }
     
+    
+    //page 2
     var stampProgramPage: some View {
         Group {
                 Text("prize offered")
@@ -286,11 +281,17 @@ struct BusinessOnboardingView: View {
                     .foregroundColor(Color.stampdTextPink)
                     .padding(.bottom, 5)
                     
+            //image picker
                 Button(action: {
                     showImagePicker = true
                 }) {
                     HStack {
-                        if let image = selectedImage {
+                        if isUploadingImage {
+                            ProgressView()
+                                .frame(width: 60, height: 60)
+                            Text("Uploading...")
+                                .foregroundColor(.gray)
+                        } else if let image = selectedImage {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
@@ -305,8 +306,10 @@ struct BusinessOnboardingView: View {
                                 .foregroundColor(.primary)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(Color.stampdTextPink)
+                        if !isUploadingImage {
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(Color.stampdTextPink)
+                        }
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -316,6 +319,7 @@ struct BusinessOnboardingView: View {
                             .stroke(Color.stampdTextPink, lineWidth: 2)
                     )
                 }
+                .disabled(isUploadingImage)
                 
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
@@ -344,6 +348,7 @@ struct BusinessOnboardingView: View {
                                 )
                         }
                         
+                        //finish button
                         Button(action: {
                             Task {
                                 await saveBusinessInfo()
@@ -384,6 +389,18 @@ struct BusinessOnboardingView: View {
             return
         }
         
+        // Check if still uploading
+        if isUploadingImage {
+            errorMessage = "Please wait for image upload to complete"
+            return
+        }
+        
+        // Check if image was selected
+        if logoUrl.isEmpty {
+            errorMessage = "Please select a business logo"
+            return
+        }
+        
         guard let stampsInt = Int(stampsNeeded), stampsInt > 0 else {
             errorMessage = "Stamps needed must be a valid number"
             return
@@ -417,7 +434,7 @@ struct BusinessOnboardingView: View {
             "prizeOffered": prizeOffered,
             "stampsNeeded": stampsInt,
             "minimumPurchase": minPurchase,
-            "logoUrl": logoUrl.isEmpty ? "https://via.placeholder.com/150" : logoUrl,
+            "logoUrl": logoUrl,
             "accountType": "Business",
             "createdAt": Timestamp(date: Date()),
             "totalCustomers": 0,
@@ -427,9 +444,6 @@ struct BusinessOnboardingView: View {
         
         do {
             try await db.collection("businesses").document(uid).setData(businessData)
-            print("✅ Business profile created successfully")
-            
-            // Update the flag so the app knows onboarding is complete
             await MainActor.run {
                 authManager.businessNeedsOnboarding = false
                 isLoading = false
@@ -437,7 +451,7 @@ struct BusinessOnboardingView: View {
         } catch {
             print("❌ Error saving business: \(error.localizedDescription)")
             await MainActor.run {
-                errorMessage = "Failed to save business info. Please try again."
+                errorMessage = "Failed to save. Please try again."
                 isLoading = false
             }
         }

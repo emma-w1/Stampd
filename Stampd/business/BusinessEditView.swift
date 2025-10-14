@@ -19,6 +19,7 @@ struct BusinessEditView: View {
     @State private var logoUrl: String
     @State private var selectedImage: UIImage?
     @State private var showImagePicker = false
+    @State private var isUploadingImage = false
     
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -130,7 +131,12 @@ struct BusinessEditView: View {
                                 showImagePicker = true
                             }) {
                                 HStack {
-                                    if let image = selectedImage {
+                                    if isUploadingImage {
+                                        ProgressView()
+                                            .frame(width: 60, height: 60)
+                                        Text("Uploading...")
+                                            .foregroundColor(.gray)
+                                    } else if let image = selectedImage {
                                         Image(uiImage: image)
                                             .resizable()
                                             .scaledToFill()
@@ -156,8 +162,10 @@ struct BusinessEditView: View {
                                             .foregroundColor(.primary)
                                     }
                                     Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .foregroundColor(Color.stampdTextPink)
+                                    if !isUploadingImage {
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(Color.stampdTextPink)
+                                    }
                                 }
                                 .padding()
                                 .background(Color(.systemBackground))
@@ -167,6 +175,7 @@ struct BusinessEditView: View {
                                         .stroke(Color.stampdTextPink, lineWidth: 2)
                                 )
                             }
+                            .disabled(isUploadingImage)
                         }
                         
                         if let errorMessage = errorMessage {
@@ -210,13 +219,19 @@ struct BusinessEditView: View {
             }
         }
         .sheet(isPresented: $showImagePicker) {
-            ImagePicker(selectedImage: $selectedImage, logoUrl: $logoUrl)
+            ImagePicker(selectedImage: $selectedImage, logoUrl: $logoUrl, isUploading: $isUploadingImage)
         }
     }
     
     func saveChanges() async {
         guard !prizeOffered.isEmpty, !stampsNeeded.isEmpty, !minimumPurchase.isEmpty else {
             errorMessage = "Please fill in all fields"
+            return
+        }
+        
+        // Check if still uploading
+        if isUploadingImage {
+            errorMessage = "Please wait for image upload to complete"
             return
         }
         
@@ -249,16 +264,14 @@ struct BusinessEditView: View {
         
         do {
             try await db.collection("businesses").document(uid).updateData(updateData)
-            print("✅ Business program updated successfully")
-            
             await MainActor.run {
                 isLoading = false
                 dismiss()
             }
         } catch {
-            print("❌ Error updating business: \(error.localizedDescription)")
+            print("❌ Update error: \(error.localizedDescription)")
             await MainActor.run {
-                errorMessage = "Failed to save changes. Please try again."
+                errorMessage = "Failed to save changes."
                 isLoading = false
             }
         }

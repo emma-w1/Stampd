@@ -2,7 +2,7 @@
 //  SettingsView.swift
 //  Stampd
 //
-//  Created by Adishree Das on 10/11/25.
+//  Created by Adishree Das on 10/13/25.
 
 import SwiftUI
 
@@ -58,9 +58,9 @@ struct SettingsView: View {
                                     .foregroundColor(Color.stampdTextPink)
                                 
                                 VStack(alignment: .leading, spacing: 12) {
-                                    HowToStep(number: "1", text: "Join loyalty programs through the Discover page")
-                                    HowToStep(number: "2", text: "Collect stamps by showing cashiers your QR code when checking out")
-                                    HowToStep(number: "3", text: "Redeem free prize when you collect enough stamps by scanning your QR code")
+                                    NumberedStep(number: "1", text: "Join loyalty programs through the Discover page")
+                                    NumberedStep(number: "2", text: "Collect stamps by showing cashiers your QR code when checking out")
+                                    NumberedStep(number: "3", text: "Redeem free prize when you collect enough stamps by scanning your QR code")
                                 }
                             }
                             .padding()
@@ -114,7 +114,7 @@ struct SettingsView: View {
     }
 }
 
-// organize setting rows
+// Settings info row
 struct SettingsRow: View {
     let icon: String
     let title: String
@@ -136,28 +136,6 @@ struct SettingsRow: View {
             }
             
             Spacer()
-        }
-    }
-}
-
-// how to step component
-struct HowToStep: View {
-    let number: String
-    let text: String
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(number)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-                .frame(width: 22, height: 22)
-                .background(Color.stampdTextPink)
-                .clipShape(Circle())
-            
-            Text(text)
-                .font(.system(size: 14))
-                .foregroundColor(.gray)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

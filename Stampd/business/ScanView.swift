@@ -20,33 +20,29 @@ struct ScanView: View {
             .ignoresSafeArea()
             
             VStack {
-                // back button
                 HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        HStack {
+                    Button(action: { dismiss() }) {
+                        HStack(spacing: 5) {
                             Image(systemName: "chevron.left")
                             Text("Back")
                         }
                         .foregroundColor(Color.stampdTextPink)
                     }
                     .padding()
-                    
                     Spacer()
                 }
                 
                 Spacer()
                 
-                //in progress
-                Text("QR Scanner")
-                    .font(.custom("Jersey15-Regular", size: 42))
-                    .foregroundColor(Color.stampdTextPink)
-                
-                Text("Coming soon!")
-                    .font(.system(size: 18))
-                    .foregroundColor(.gray)
-                    .padding()
+                VStack(spacing: 15) {
+                    Text("QR Scanner")
+                        .font(.custom("Jersey15-Regular", size: 42))
+                        .foregroundColor(Color.stampdTextPink)
+                    
+                    Text("Coming soon!")
+                        .font(.system(size: 18))
+                        .foregroundColor(.gray)
+                }
                 
                 Spacer()
             }

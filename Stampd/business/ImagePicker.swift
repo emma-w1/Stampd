@@ -11,6 +11,7 @@ import PhotosUI
 struct ImagePicker: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
     @Binding var logoUrl: String
+    @Binding var isUploading: Bool
     @Environment(\.dismiss) var dismiss
     
     func makeUIViewController(context: Context) -> PHPickerViewController {
@@ -46,9 +47,28 @@ struct ImagePicker: UIViewControllerRepresentable {
                     DispatchQueue.main.async {
                         if let image = image as? UIImage {
                             self.parent.selectedImage = image
-                            // For now, set a placeholder URL since we're not uploading to cloud storage
-                            self.parent.logoUrl = "local_image_selected"
+                            // Upload to Imgur
+                            self.uploadToImgur(image: image)
                         }
+                    }
+                }
+            }
+        }
+        
+        func uploadToImgur(image: UIImage) {
+            parent.isUploading = true
+            
+            Task {
+                do {
+                    let url = try await ImgurUploader().uploadImage(image)
+                    await MainActor.run {
+                        self.parent.logoUrl = url
+                        self.parent.isUploading = false
+                    }
+                } catch {
+                    print("❌ Upload failed: \(error.localizedDescription)")
+                    await MainActor.run {
+                        self.parent.isUploading = false
                     }
                 }
             }

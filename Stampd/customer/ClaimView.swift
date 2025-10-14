@@ -56,9 +56,9 @@ struct ClaimView: View {
                                 }
                                 
                                 VStack(alignment: .leading, spacing: 8) {
-                                    InstructionRow(number: "1", text: "Make a purchase at a participating business")
-                                    InstructionRow(number: "2", text: "Show your QR code to the cashier to stamp")
-                                    InstructionRow(number: "4", text: "Collect stamps and claim free rewards!")
+                                    NumberedStep(number: "1", text: "Make a purchase at a participating business")
+                                    NumberedStep(number: "2", text: "Show your QR code to the cashier")
+                                    NumberedStep(number: "3", text: "Collect stamps and claim free rewards!")
                                 }
                                 .padding(.leading, 5)
                             }
@@ -78,28 +78,6 @@ struct ClaimView: View {
                 .padding(25)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-}
-
-// format instruction rows
-struct InstructionRow: View {
-    let number: String
-    let text: String
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text(number)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
-                .frame(width: 24, height: 24)
-                .background(Color.stampdTextPink)
-                .clipShape(Circle())
-            
-            Text(text)
-                .font(.system(size: 14))
-                .foregroundColor(.gray)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

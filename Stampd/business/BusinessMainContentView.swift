@@ -7,25 +7,21 @@
 
 import SwiftUI
 
-//manages what business screens look like
 struct BusinessMainContentView: View {
     @State private var selectedTab: Tab = .discover
     @EnvironmentObject var authManager: AuthManager
     
     var body: some View {
         VStack(spacing: 0) {
-            ZStack {
-                switch selectedTab {
-                case .discover:
-                    BusinessView()
-                case .settings:
-                    SettingsView()
-                case .claim:
-                    ClaimView()
-                }
+            switch selectedTab {
+            case .discover:
+                BusinessView()
+            case .settings:
+                SettingsView()
+            case .claim:
+                ClaimView()
             }
             
-            // navbar
             BottomNavbar(selectedTab: $selectedTab)
         }
         .edgesIgnoringSafeArea(.bottom)

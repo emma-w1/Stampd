@@ -8,51 +8,7 @@
 import SwiftUI
 import FirebaseFirestore
 
-// customer program data
-struct CustomerProgram: Identifiable, Codable {
-    @DocumentID var id: String?
-    var claimed: Bool
-    var currentStamps: Int
-    var prizesClaimed: Int
-}
-
-struct ProgramWithBusiness: Identifiable {
-    let id: String // businessId
-    let program: CustomerProgram
-    let business: Business
-}
-
-//all business info from firebase
-struct Business: Identifiable, Codable, Hashable {
-    var id: String?
-    let businessId: String
-    let businessName: String
-    let location: String
-    let category: String
-    let logoUrl: String
-    let description: String
-    let email: String
-    let phoneNumber: String?
-    let hours: String
-    let prizeOffered: String
-    let stampsNeeded: Int
-    let minimumPurchase: Double
-    let accountType: String
-    let createdAt: Date
-    let totalCustomers: Int
-    let totalStampsGiven: Int
-    let rewardsRedeemed: Int
-    
-    static func==(lhs: Business, rhs: Business) -> Bool {
-        return lhs.id == rhs.id
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
-
-//fetch customer programs from Firebase
+// Fetch customer programs
 class CustomerProgramFetcher: ObservableObject {
     @Published var programsWithBusinesses: [ProgramWithBusiness] = []
     @Published var isLoading = false
@@ -131,8 +87,8 @@ class CustomerProgramFetcher: ObservableObject {
     }
 }
 
-//get firebase business info
-class BusinessDataFetcher: ObservableObject{
+// Fetch businesses
+class BusinessDataFetcher: ObservableObject {
     @Published var businesses: [Business] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -142,8 +98,8 @@ class BusinessDataFetcher: ObservableObject{
     init() {
         fetchBusinesses()
     }
+    
     func fetchBusinesses() {
-        print("🔍 Fetching businesses from Firebase...")
         isLoading = true
         errorMessage = nil
         
@@ -159,27 +115,11 @@ class BusinessDataFetcher: ObservableObject{
                     return
                 }
                 
-                guard let documents = querySnapshot?.documents else {
-                    print("⚠️ No documents found in businesses collection")
-                    self.businesses = []
-                    return
-                }
-                
-                print("📦 Found \(documents.count) business documents")
-                
-                self.businesses = documents.compactMap { document in
-                    do {
-                        var business = try document.data(as: Business.self)
-                        business.id = document.documentID
-                        print("✅ Loaded: \(business.businessName)")
-                        return business
-                    } catch {
-                        print("❌ Decoding error for \(document.documentID): \(error)")
-                        return nil
-                    }
-                }
-                
-                print("✅ Successfully loaded \(self.businesses.count) businesses")
+                self.businesses = querySnapshot?.documents.compactMap { document in
+                    guard var business = try? document.data(as: Business.self) else { return nil }
+                    business.id = document.documentID
+                    return business
+                } ?? []
             }
         }
     }
