@@ -8,11 +8,18 @@
 import SwiftUI
 import FirebaseFirestore
 
+// Import Business from DiscoverView if needed, or redefine minimal version here
+
 struct BusinessView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showingScanView = false
+    @State private var showingEditView = false
     @State private var rewardsToday = 12//placeholder
     @State private var stampsToday = 45 //placeholder
+    @State private var businessData: Business?
+    @State private var isLoadingBusiness = true
+    
+    private var db = Firestore.firestore()
     
     var body: some View {
         ZStack {
@@ -47,7 +54,7 @@ struct BusinessView: View {
                         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
                     }
                     .padding(.horizontal, 25)
-                    .padding(.top, 60)
+                    .padding(.top, 30)
                     
                     //quick stats
                     HStack(spacing: 15) {
@@ -93,68 +100,126 @@ struct BusinessView: View {
                         .padding(.horizontal, 25)
                         .padding(.top, 10)
                     
-                    HStack(alignment: .top, spacing: 15) {
-                        VStack(spacing: 12) {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(height: 100)
-                                .cornerRadius(8)
-                                .overlay(
-                                    Image(systemName: "photo")
-                                        .foregroundColor(.gray)
-                                        .font(.system(size: 30))
-                                )
-                            
-                            Text("FREE COFFEE")
-                                .font(.custom("Jersey15-Regular", size: 20))
-                                .foregroundColor(.black)
-                            
-                            Text("10 stamps needed")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.white)
-                        .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                    if isLoadingBusiness {
+                        ProgressView()
+                            .padding(.vertical, 50)
+                    } else if let business = businessData {
+                            VStack(spacing: 12) {
+                                AsyncImage(url: URL(string: business.logoUrl)) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(height: 100)
+                                            .cornerRadius(8)
+                                            .overlay(ProgressView())
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(height: 100)
+                                            .clipped()
+                                            .cornerRadius(8)
+                                    case .failure:
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(height: 100)
+                                            .cornerRadius(8)
+                                            .overlay(
+                                                Image(systemName: "photo")
+                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 30))
+                                            )
+                                    @unknown default:
+                                        EmptyView()
+                                    }
+                                }
+                                
+                                Text(business.prizeOffered)
+                                    .font(.custom("Jersey15-Regular", size: 20))
+                                    .foregroundColor(.black)
+                                
+                                Text("\(business.stampsNeeded) stamps needed")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                                
+                                Text("Min: $\(String(format: "%.2f", business.minimumPurchase))")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                            .padding(.horizontal, 25)
                         
-                        VStack(spacing: 15) {
-                            Spacer()
                             Button(action: {
-                                // edit button
-                                print("Edit tapped")
+                                showingEditView = true
                             }) {
                                 Text("Edit")
                                     .font(.custom("Jersey15-Regular", size: 18))
                                     .foregroundColor(.white)
-                                    .frame(width: 80)
+                                    .frame(maxWidth: .infinity)
                                     .padding(.vertical, 10)
                                     .background(Color.stampdButtonPink)
-                                    .cornerRadius(10)
+                                    .cornerRadius(12)
+                                    .padding(.horizontal, 25)
                                     .shadow(color: Color.stampdButtonShadow, radius: 5, x: 0, y: 2)
                             }
                             
-                            // logo (maybe change this idk what to put here)
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 80, height: 80)
-                                .cornerRadius(8)
-                                .overlay(
-                                    Image(systemName: "building.2.fill")
-                                        .foregroundColor(.gray)
-                                        .font(.system(size: 30))
-                                )
-                            Spacer()
-                        }
+
+                    } else {
+                        Text("Unable to load business info")
+                            .foregroundColor(.gray)
+                            .padding()
                     }
-                    .padding(.horizontal, 25)
-                    .padding(.bottom, 30)
                 }
             }
         }
         .sheet(isPresented: $showingScanView) {
             ScanView()
+        }
+        .sheet(isPresented: $showingEditView) {
+            if let business = businessData {
+                BusinessEditView(business: business)
+            }
+        }
+        .onAppear {
+            fetchBusinessData()
+        }
+    }
+    
+    func fetchBusinessData() {
+        guard let uid = authManager.currentUser?.uid else {
+            print("❌ No user ID found")
+            isLoadingBusiness = false
+            return
+        }
+        
+        db.collection("businesses").document(uid).getDocument { (document, error) in
+            if let error = error {
+                print("❌ Error fetching business: \(error.localizedDescription)")
+                isLoadingBusiness = false
+                return
+            }
+            
+            guard let document = document, document.exists else {
+                print("⚠️ Business document not found")
+                isLoadingBusiness = false
+                return
+            }
+            
+            do {
+                var business = try document.data(as: Business.self)
+                business.id = document.documentID
+                businessData = business
+                print("✅ Business data loaded: \(business.businessName)")
+            } catch {
+                print("❌ Error decoding business: \(error)")
+            }
+            
+            isLoadingBusiness = false
         }
     }
 }

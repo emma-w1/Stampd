@@ -109,18 +109,20 @@ struct BusinessInfoView: View {
                                     .font(.system(size: 16, weight: .semibold))
                             }
 
-                            HStack {
-                                Image(systemName: "phone.fill")
-                                    .foregroundColor(Color.stampdTextPink)
-                                    .frame(width: 30)
-                                Text(business.phoneNumber)
-                                    .font(.system(size: 16, weight: .semibold))
+                            if let phone = business.phoneNumber {
+                                HStack {
+                                    Image(systemName: "phone.fill")
+                                        .foregroundColor(Color.stampdTextPink)
+                                        .frame(width: 30)
+                                    Text(phone)
+                                        .font(.system(size: 16, weight: .semibold))
+                                }
                             }
                             HStack {
                                 Image(systemName: "envelope.fill")
                                     .foregroundColor(Color.stampdTextPink)
                                     .frame(width: 30)
-                                Text(business.phoneNumber)
+                                Text(business.email)
                                     .font(.system(size: 16, weight: .semibold))
                             }
                         }
@@ -251,7 +253,7 @@ struct BusinessInfoView: View {
         logoUrl: "https://example.com/logo.png",
         description: "Great coffee shop",
         email: "test@cafe.com",
-        phoneNumber: "+1-555-0100",
+        phoneNumber: nil,
         hours: "Mon-Fri: 8AM-6PM",
         prizeOffered: "FREE COFFEE",
         stampsNeeded: 10,

@@ -32,7 +32,7 @@ struct Business: Identifiable, Codable, Hashable {
     let logoUrl: String
     let description: String
     let email: String
-    let phoneNumber: String
+    let phoneNumber: String?
     let hours: String
     let prizeOffered: String
     let stampsNeeded: Int
