@@ -8,19 +8,27 @@
 import SwiftUI
 import FirebaseFirestore
 
+//make stamp values only integers
+extension Binding where Value == Int {
+    var doubleValue: Binding<Double> {
+        return Binding<Double>(
+            get: { Double(self.wrappedValue) },
+            set: { self.wrappedValue = Int(round($0)) }
+        )
+    }
+}
+
 struct BusinessOnboardingView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showLogoutAlert = false
-    
     @State private var currentPage = 1
-    
     @State private var businessName = ""
     @State private var category: BusinessCategory = .foodDrink
     @State private var location = ""
     @State private var description = ""
     @State private var hours = ""
     @State private var prizeOffered = ""
-    @State private var stampsNeeded = ""
+    @State private var stampsNeeded: Int = 1
     @State private var minimumPurchase = ""
     @State private var logoUrl = ""
     @State private var selectedImage: UIImage?
@@ -98,7 +106,7 @@ struct BusinessOnboardingView: View {
                 authManager.signOut()
             }
         } message: {
-            Text("Your progress will be lost if you haven't completed setup.")
+            Text("Your progress will be lost.")
         }
     }
     
@@ -175,7 +183,7 @@ struct BusinessOnboardingView: View {
                               .frame(maxWidth: .infinity, alignment: .leading)
                               .foregroundColor(Color.stampdTextPink)
                               .padding(.bottom, 5)
-                        TextField("Brief description of your business", text: $description)
+                        TextField("Brief description of business", text: $description)
                             .padding()
                             .background(Color(.systemBackground))
                             .cornerRadius(12)
@@ -190,7 +198,7 @@ struct BusinessOnboardingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .foregroundColor(Color.stampdTextPink)
                             .padding(.bottom, 5)
-                        TextField("e.g. Mon-Fri: 8AM-6PM", text: $hours)
+                        TextField("ex: Mon-Fri: 8AM-6PM", text: $hours)
                             .padding()
                             .background(Color(.systemBackground))
                             .cornerRadius(12)
@@ -233,7 +241,7 @@ struct BusinessOnboardingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundColor(Color.stampdTextPink)
                     .padding(.bottom, 5)
-                TextField("e.g. FREE COFFEE", text: $prizeOffered)
+                TextField("ex: Free Coffee", text: $prizeOffered)
                     .padding()
                     .background(Color(.systemBackground))
                     .cornerRadius(12)
@@ -243,28 +251,48 @@ struct BusinessOnboardingView: View {
                     )
                     .padding(.bottom, 8)
                     
-                Text("stamps needed")
+                Text("stamps needed (\(stampsNeeded))")
                     .font(.custom("Jersey15-Regular", size: 26))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundColor(Color.stampdTextPink)
                     .padding(.bottom, 5)
-                TextField("e.g. 10", text: $stampsNeeded)
-                    .keyboardType(.numberPad)
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.stampdTextPink, lineWidth: 2)
-                    )
-                    .padding(.bottom, 8)
+                VStack(spacing: 8) {
+                    Slider(
+                        value: $stampsNeeded.doubleValue,
+                        in: 1...15,
+                        step: 1
+                    ) {
+                        Text("Stamps Needed")
+                    } minimumValueLabel: {
+                        Text("1").foregroundStyle(Color.stampdTextPink).font(.caption)
+                    } maximumValueLabel: {
+                        Text("15").foregroundColor(Color.stampdTextPink).font(.caption)
+                    }
+                    .tint(Color.stampdButtonPink)
+                    
+                    HStack {
+                        Text("Selected: **\(stampsNeeded)** stamps ")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+                .background(Color(.systemBackground))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.stampdTextPink, lineWidth: 2)
+                )
+                .padding(.bottom, 8)
                     
                 Text("minimum purchase")
                     .font(.custom("Jersey15-Regular", size: 26))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundColor(Color.stampdTextPink)
                     .padding(.bottom, 5)
-                TextField("e.g. 5.00", text: $minimumPurchase)
+                TextField("ex: $5.00", text: $minimumPurchase)
                     .keyboardType(.decimalPad)
                     .padding()
                     .background(Color(.systemBackground))
@@ -384,9 +412,9 @@ struct BusinessOnboardingView: View {
     }
     
     func saveBusinessInfo() async {
-        // Validate required fields
+        // validate required fields
         guard !businessName.isEmpty, !location.isEmpty, !description.isEmpty, !hours.isEmpty,
-              !prizeOffered.isEmpty, !stampsNeeded.isEmpty, !minimumPurchase.isEmpty else {
+              !prizeOffered.isEmpty, !minimumPurchase.isEmpty else {
             errorMessage = "Please fill in all fields"
             return
         }
@@ -400,11 +428,6 @@ struct BusinessOnboardingView: View {
         // check if image selected
         if logoUrl.isEmpty {
             errorMessage = "Please select a business logo"
-            return
-        }
-        
-        guard let stampsInt = Int(stampsNeeded), stampsInt > 0 else {
-            errorMessage = "Stamps needed must be a valid number"
             return
         }
         
@@ -434,7 +457,7 @@ struct BusinessOnboardingView: View {
             "description": description,
             "hours": hours,
             "prizeOffered": prizeOffered,
-            "stampsNeeded": stampsInt,
+            "stampsNeeded": stampsNeeded,
             "minimumPurchase": minPurchase,
             "logoUrl": logoUrl,
             "accountType": "Business",

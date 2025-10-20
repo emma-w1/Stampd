@@ -121,7 +121,7 @@ struct BusinessEditView: View {
                                 )
                                 .padding(.bottom, 8)
                             
-                            Text("business logo")
+                            Text("business logo / product image")
                                 .font(.custom("Jersey15-Regular", size: 26))
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .foregroundColor(Color.stampdTextPink)
