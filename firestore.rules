@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read/write their own document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Customer programs subcollection
+      match /programs/{businessId} {
+        // Customer can read/write their own programs
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Business can read/write programs for their own businessId
+        // This allows businesses to add stamps to customers
+        allow read, write: if request.auth != null && request.auth.uid == businessId;
+      }
+    }
+    
+    // Businesses collection
+    match /businesses/{businessId} {
+      // Anyone authenticated can read businesses (for discovery)
+      allow read: if request.auth != null;
+      
+      // Only the business owner can write their document
+      allow write: if request.auth != null && request.auth.uid == businessId;
+    }
+  }
+}
+
+

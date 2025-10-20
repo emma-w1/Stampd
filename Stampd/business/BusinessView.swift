@@ -178,7 +178,7 @@ struct BusinessView: View {
             }
         }
         .sheet(isPresented: $showingScanView) {
-            ScanView()
+            SmartScannerView()
         }
         .sheet(isPresented: $showingEditView) {
             if let business = businessData {
