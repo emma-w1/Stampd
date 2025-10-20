@@ -2,16 +2,15 @@ import SwiftUI
 import AVFoundation
 import FirebaseFirestore
 
-struct SmartScannerView: View {
+struct PrizeScannerView: View {
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var authManager: AuthManager
     
     @State private var scannedCode: String?
     @State private var isScanning = true
     @State private var isProcessing = false
-    @State private var statusMessage = "Scan customer QR code"
+    @State private var statusMessage = "Scan customer QR code to redeem prize"
     @State private var showSuccess = false
-    @State private var actionTaken = "" 
     
     var body: some View {
         ZStack {
@@ -41,11 +40,11 @@ struct SmartScannerView: View {
                 if showSuccess {
                     VStack(spacing: 15) {
                         HStack(spacing: 10) {
-                            Image(systemName: actionTaken == "stamp" ? "star.fill" : "gift.fill")
+                            Image(systemName: "gift.fill")
                                 .font(.system(size: 24))
                                 .foregroundColor(.green)
                             
-                            Text(actionTaken == "stamp" ? "Stamp Added!" : "Prize Redeemed!")
+                            Text("Prize Redeemed!")
                                 .font(.custom("Jersey15-Regular", size: 24))
                                 .foregroundColor(.white)
                         }
@@ -71,26 +70,33 @@ struct SmartScannerView: View {
         }
         .onChange(of: scannedCode) { oldValue, newValue in
             if let userId = newValue {
-                processCustomer(userId: userId)
+                redeemPrize(for: userId)
             }
         }
     }
     
-    func processCustomer(userId: String) {
+    func redeemPrize(for customerId: String) {
         guard let businessId = authManager.currentUser?.uid else {
             statusMessage = "Error: Business not found"
             return
         }
         
+        print("🎁 Attempting to redeem prize:")
+        print("   Customer ID: \(customerId)")
+        print("   Business ID: \(businessId)")
+        
         isProcessing = true
         let db = Firestore.firestore()
         
-        let programRef = db.collection("users").document(userId)
+        let programRef = db.collection("users").document(customerId)
             .collection("programs").document(businessId)
         
-        //get user program data
+        print("📍 Checking path: users/\(customerId)/programs/\(businessId)")
+        
+        // First, get the customer's current program data
         programRef.getDocument { (document, error) in
             if let error = error {
+                print("❌ Error fetching program: \(error.localizedDescription)")
                 self.statusMessage = "Error: Customer not found"
                 self.isProcessing = false
                 self.showSuccess = true
@@ -98,18 +104,28 @@ struct SmartScannerView: View {
             }
             
             guard let document = document, document.exists else {
-                self.addCustomerToProgram(customerId: userId, businessId: businessId)
+                print("⚠️ Program document does not exist - adding customer to program")
+                self.addCustomerToProgram(customerId: customerId, businessId: businessId)
                 return
             }
             
-            // check if they can claim a prize
+            // Get current stamps and check if they can claim a prize
             let currentStamps = document.data()?["currentStamps"] as? Int ?? 0
-            let prizesClaimed = document.data()?["prizesClaimed"] as? Int ?? 0
+            let alreadyClaimed = document.data()?["claimed"] as? Bool ?? false
             
+            print("✅ Program found - Current stamps: \(currentStamps), Already claimed: \(alreadyClaimed)")
             
-            // check stampsNeeded
+            if alreadyClaimed {
+                self.statusMessage = "Customer already claimed their prize"
+                self.isProcessing = false
+                self.showSuccess = true
+                return
+            }
+            
+            // Get business info to check stampsNeeded
             db.collection("businesses").document(businessId).getDocument { (businessDoc, businessError) in
                 if let businessError = businessError {
+                    print("❌ Error fetching business info: \(businessError.localizedDescription)")
                     self.statusMessage = "Error: Could not load program info"
                     self.isProcessing = false
                     self.showSuccess = true
@@ -119,19 +135,22 @@ struct SmartScannerView: View {
                 guard let businessDoc = businessDoc,
                       let businessData = businessDoc.data(),
                       let stampsNeeded = businessData["stampsNeeded"] as? Int else {
+                    print("❌ Could not get stampsNeeded from business")
                     self.statusMessage = "Error: Invalid program configuration"
                     self.isProcessing = false
                     self.showSuccess = true
                     return
                 }
                 
-                // add stamp or redeem prize
-                if currentStamps >= stampsNeeded && !(document.data()?["claimed"] as? Bool ?? false) {
-                    self.redeemPrize(programRef: programRef, customerId: userId)
-                } else if currentStamps < stampsNeeded {
-                    self.addStamp(programRef: programRef)
+                print("📊 Program requires \(stampsNeeded) stamps, customer has \(currentStamps)")
+                
+                // Check if customer has enough stamps
+                if currentStamps >= stampsNeeded {
+                    // Customer can claim a prize
+                    self.processPrizeRedemption(programRef: programRef, customerId: customerId)
                 } else {
-                    self.statusMessage = "Customer already claimed their prize"
+                    // Customer needs more stamps
+                    self.statusMessage = "Customer needs \(stampsNeeded - currentStamps) more stamps"
                     self.isProcessing = false
                     self.showSuccess = true
                 }
@@ -139,39 +158,25 @@ struct SmartScannerView: View {
         }
     }
     
-    func addStamp(programRef: DocumentReference) {
+    func processPrizeRedemption(programRef: DocumentReference, customerId: String) {
+        print("🎁 Redeeming prize for customer")
         
-        programRef.updateData([
-            "currentStamps": FieldValue.increment(Int64(1))
-        ]) { error in
-            self.isProcessing = false
-            
-            if let error = error {
-                self.statusMessage = "Failed to add stamp"
-            } else {
-                self.actionTaken = "stamp"
-                self.statusMessage = "Stamp added successfully!"
-            }
-            
-            self.showSuccess = true
-        }
-    }
-    
-    func redeemPrize(programRef: DocumentReference, customerId: String) {
-        // reset and add prize 
+        // Mark as claimed, reset stamps, and increment prizes claimed
         programRef.updateData([
             "claimed": true,
-            "currentStamps": 0,
+            "currentStamps": 0, // Reset stamps after claiming
             "prizesClaimed": FieldValue.increment(Int64(1))
         ]) { error in
             self.isProcessing = false
             
             if let error = error {
+                print("❌ Error redeeming prize: \(error.localizedDescription)")
                 self.statusMessage = "Failed to redeem prize"
             } else {
-                self.actionTaken = "prize"
+                print("✅ Prize redeemed successfully!")
                 self.statusMessage = "Prize redeemed successfully!"
                 
+                // Also update business analytics
                 self.updateBusinessAnalytics()
             }
             
@@ -187,19 +192,24 @@ struct SmartScannerView: View {
             "rewardsRedeemed": FieldValue.increment(Int64(1))
         ]) { error in
             if let error = error {
+                print("❌ Error updating business analytics: \(error.localizedDescription)")
+            } else {
+                print("✅ Business analytics updated")
             }
         }
     }
     
     func addCustomerToProgram(customerId: String, businessId: String) {
+        print("➕ Adding customer to business program")
+        
         let db = Firestore.firestore()
         let programRef = db.collection("users").document(customerId)
             .collection("programs").document(businessId)
         
-        //  new program entry
+        // Create new program entry with initial values
         let programData: [String: Any] = [
             "claimed": false,
-            "currentStamps": 1,
+            "currentStamps": 1, // Give them their first stamp
             "prizesClaimed": 0
         ]
         
@@ -207,9 +217,10 @@ struct SmartScannerView: View {
             self.isProcessing = false
             
             if let error = error {
+                print("❌ Error adding customer to program: \(error.localizedDescription)")
                 self.statusMessage = "Failed to add customer to program"
             } else {
-                self.actionTaken = "stamp"
+                print("✅ Customer added to program with first stamp!")
                 self.statusMessage = "Customer added to program! First stamp given!"
             }
             

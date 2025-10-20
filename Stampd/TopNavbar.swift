@@ -21,10 +21,9 @@ struct TopNavbar: View {
                 
                 Spacer()
                 
-                // search for customer
+                // search icon for customer
                 if showSearchIcon && authManager.currentUser?.accountType == .customer {
                     Button(action: {
-                        print("Search tapped")
                     }) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 22))
