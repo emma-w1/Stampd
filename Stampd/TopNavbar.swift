@@ -34,7 +34,6 @@ struct TopNavbar: View {
             }
             .padding(.horizontal, 25)
             .padding(.vertical, 12)
-//            .background(Color.white.opacity(0.95))
             
             Spacer()
         }

@@ -92,7 +92,7 @@ struct BusinessView: View {
                     }
                     .padding(.horizontal, 25)
                     
-                    // loyalty Program description
+                    // loyalty program description
                     Text("Stamp Programs")
                         .font(.custom("Jersey15-Regular", size: 36))
                         .foregroundColor(Color.stampdTextPink)
@@ -186,7 +186,7 @@ struct BusinessView: View {
             }
         }
         .onChange(of: showingEditView) { oldValue, newValue in
-            // Refresh data when edit sheet is dismissed
+            // refresh data
             if oldValue == true && newValue == false {
                 fetchBusinessData()
             }

@@ -107,7 +107,7 @@ struct BusinessInfoView: View {
                                 .foregroundColor(Color.stampdTextPink)
                             
                             VStack(spacing: 15) {
-//details
+                                //details
                                 VStack(spacing: 12) {
                                     HStack {
                                         Image(systemName: "gift.fill")
@@ -185,7 +185,6 @@ struct BusinessInfoView: View {
     
     func joinProgram() {
         guard let customerId = authManager.currentUser?.uid else {
-            print("❌ No customer ID found")
             return
         }
         

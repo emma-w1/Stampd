@@ -64,7 +64,6 @@ struct LoginView: View {
             let _ = result.user.uid
             
         } catch let error {
-            print("Login Error: \(error.localizedDescription)")
             errorMessage = "Login failed. Please check your credentials."
         }
         

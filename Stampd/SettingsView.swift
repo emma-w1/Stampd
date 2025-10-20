@@ -114,7 +114,7 @@ struct SettingsView: View {
     }
 }
 
-// Settings info row
+// settings info row
 struct SettingsRow: View {
     let icon: String
     let title: String

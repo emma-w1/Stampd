@@ -8,7 +8,7 @@
 import SwiftUI
 import FirebaseFirestore
 
-// User profile data
+// user profile
 struct UserProfile: Identifiable, Codable {
     @DocumentID var id: String?
     let uid: String
@@ -23,7 +23,7 @@ struct UserProfile: Identifiable, Codable {
     }
 }
 
-// Business data from Firebase
+// business data
 struct Business: Identifiable, Codable, Hashable {
     var id: String?
     let businessId: String
@@ -53,7 +53,7 @@ struct Business: Identifiable, Codable, Hashable {
     }
 }
 
-// Customer program progress (subcollection under user)
+// customer program progress
 struct CustomerProgram: Identifiable, Codable {
     @DocumentID var id: String?
     var claimed: Bool
@@ -61,14 +61,14 @@ struct CustomerProgram: Identifiable, Codable {
     var prizesClaimed: Int
 }
 
-// Combined program with business info for display
+// combined program with business info
 struct ProgramWithBusiness: Identifiable {
     let id: String
     let program: CustomerProgram
     let business: Business
 }
 
-// Business categories
+// business categories
 enum BusinessCategory: String, CaseIterable, Hashable {
     case foodDrink = "Food & Drink"
     case retailApparel = "Retail & Apparel"

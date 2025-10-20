@@ -42,7 +42,7 @@ struct BusinessEditView: View {
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Top bar
+                // top bar
                 HStack {
                     Button(action: {
                         dismiss()
@@ -269,7 +269,6 @@ struct BusinessEditView: View {
                 dismiss()
             }
         } catch {
-            print("❌ Update error: \(error.localizedDescription)")
             await MainActor.run {
                 errorMessage = "Failed to save changes."
                 isLoading = false

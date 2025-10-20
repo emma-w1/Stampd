@@ -82,22 +82,15 @@ struct SmartScannerView: View {
             return
         }
         
-        print("🔍 Processing customer scan:")
-        print("   Customer ID: \(userId)")
-        print("   Business ID: \(businessId)")
-        
         isProcessing = true
         let db = Firestore.firestore()
         
         let programRef = db.collection("users").document(userId)
             .collection("programs").document(businessId)
         
-        print("📍 Checking path: users/\(userId)/programs/\(businessId)")
-        
         //get user program data
         programRef.getDocument { (document, error) in
             if let error = error {
-                print("❌ Error fetching program: \(error.localizedDescription)")
                 self.statusMessage = "Error: Customer not found"
                 self.isProcessing = false
                 self.showSuccess = true
@@ -105,7 +98,6 @@ struct SmartScannerView: View {
             }
             
             guard let document = document, document.exists else {
-                print("⚠️ Program document does not exist")
                 self.statusMessage = "Customer not in your program"
                 self.isProcessing = false
                 self.showSuccess = true
@@ -116,12 +108,10 @@ struct SmartScannerView: View {
             let currentStamps = document.data()?["currentStamps"] as? Int ?? 0
             let prizesClaimed = document.data()?["prizesClaimed"] as? Int ?? 0
             
-            print("✅ Program found - Current stamps: \(currentStamps), Prizes claimed: \(prizesClaimed)")
             
             // check stampsNeeded
             db.collection("businesses").document(businessId).getDocument { (businessDoc, businessError) in
                 if let businessError = businessError {
-                    print("❌ Error fetching business info: \(businessError.localizedDescription)")
                     self.statusMessage = "Error: Could not load program info"
                     self.isProcessing = false
                     self.showSuccess = true
@@ -131,14 +121,11 @@ struct SmartScannerView: View {
                 guard let businessDoc = businessDoc,
                       let businessData = businessDoc.data(),
                       let stampsNeeded = businessData["stampsNeeded"] as? Int else {
-                    print("❌ Could not get stampsNeeded from business")
                     self.statusMessage = "Error: Invalid program configuration"
                     self.isProcessing = false
                     self.showSuccess = true
                     return
                 }
-                
-                print("📊 Program requires \(stampsNeeded) stamps, customer has \(currentStamps)")
                 
                 // add stamp or redeem prize
                 if currentStamps >= stampsNeeded && !(document.data()?["claimed"] as? Bool ?? false) {
@@ -155,7 +142,6 @@ struct SmartScannerView: View {
     }
     
     func addStamp(programRef: DocumentReference) {
-        print("🎯 Adding stamp to customer")
         
         programRef.updateData([
             "currentStamps": FieldValue.increment(Int64(1))
@@ -163,10 +149,8 @@ struct SmartScannerView: View {
             self.isProcessing = false
             
             if let error = error {
-                print("❌ Error adding stamp: \(error.localizedDescription)")
                 self.statusMessage = "Failed to add stamp"
             } else {
-                print("✅ Stamp added successfully!")
                 self.actionTaken = "stamp"
                 self.statusMessage = "Stamp added successfully!"
             }
@@ -176,25 +160,20 @@ struct SmartScannerView: View {
     }
     
     func redeemPrize(programRef: DocumentReference, customerId: String) {
-        print("🎁 Redeeming prize for customer")
-        
-        // Mark as claimed and increment prizes claimed
+        // reset and add prize 
         programRef.updateData([
             "claimed": true,
-            "currentStamps": 0, // Reset stamps after claiming
+            "currentStamps": 0,
             "prizesClaimed": FieldValue.increment(Int64(1))
         ]) { error in
             self.isProcessing = false
             
             if let error = error {
-                print("❌ Error redeeming prize: \(error.localizedDescription)")
                 self.statusMessage = "Failed to redeem prize"
             } else {
-                print("✅ Prize redeemed successfully!")
                 self.actionTaken = "prize"
                 self.statusMessage = "Prize redeemed successfully!"
                 
-                // Also update business analytics
                 self.updateBusinessAnalytics()
             }
             
@@ -210,9 +189,6 @@ struct SmartScannerView: View {
             "rewardsRedeemed": FieldValue.increment(Int64(1))
         ]) { error in
             if let error = error {
-                print("❌ Error updating business analytics: \(error.localizedDescription)")
-            } else {
-                print("✅ Business analytics updated")
             }
         }
     }

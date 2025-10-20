@@ -47,7 +47,7 @@ struct ImagePicker: UIViewControllerRepresentable {
                     DispatchQueue.main.async {
                         if let image = image as? UIImage {
                             self.parent.selectedImage = image
-                            // Upload to Imgur
+                            // upload to imgur
                             self.uploadToImgur(image: image)
                         }
                     }
@@ -66,7 +66,6 @@ struct ImagePicker: UIViewControllerRepresentable {
                         self.parent.isUploading = false
                     }
                 } catch {
-                    print("❌ Upload failed: \(error.localizedDescription)")
                     await MainActor.run {
                         self.parent.isUploading = false
                     }

@@ -369,6 +369,8 @@ struct BusinessOnboardingView: View {
                 }
             }
     
+    
+    //check if fields are filled in
     func validateAndGoToPage2() {
         guard !businessName.isEmpty, !location.isEmpty, !description.isEmpty, !hours.isEmpty else {
             errorMessage = "Please fill in all fields"
@@ -389,13 +391,13 @@ struct BusinessOnboardingView: View {
             return
         }
         
-        // Check if still uploading
+        // check if still uploading
         if isUploadingImage {
             errorMessage = "Please wait for image upload to complete"
             return
         }
         
-        // Check if image was selected
+        // check if image selected
         if logoUrl.isEmpty {
             errorMessage = "Please select a business logo"
             return
@@ -422,7 +424,7 @@ struct BusinessOnboardingView: View {
         
         let db = Firestore.firestore()
         
-        // Create business document with uid as businessId
+        // create business document
         let businessData: [String: Any] = [
             "businessId": uid,
             "businessName": businessName,
@@ -449,7 +451,6 @@ struct BusinessOnboardingView: View {
                 isLoading = false
             }
         } catch {
-            print("❌ Error saving business: \(error.localizedDescription)")
             await MainActor.run {
                 errorMessage = "Failed to save. Please try again."
                 isLoading = false

@@ -50,15 +50,13 @@ class AuthManager: ObservableObject {
             
             DispatchQueue.main.async {
                 if let error = error {
-                    print("❌ Error loading user profile: \(error.localizedDescription)")
-                    // Still try to create a profile even if there's an error
+                    // try to create profile even if error
                     self.createMissingProfile(uid: uid)
                     return
                 }
                 
-                // Check if profile exists
+                // check if profile exists
                 if let document = document, document.exists {
-                    // Profile exists, decode it
                     do {
                         let profile = try document.data(as: UserProfile.self)
                         self.currentUser = profile
@@ -67,7 +65,6 @@ class AuthManager: ObservableObject {
                             self.checkBusinessOnboarding(uid: uid)
                         }
                     } catch {
-                        print("❌ Profile decode error: \(error.localizedDescription)")
                         self.createMissingProfile(uid: uid)
                     }
                 } else {
@@ -111,13 +108,13 @@ class AuthManager: ObservableObject {
         }
     }
     
+    //signs the user out
     func signOut() {
         do {
             try Auth.auth().signOut()
             currentUser = nil
             isAuthenticated = false
         } catch {
-            print("Sign out error: \(error)")
         }
     }
 }
@@ -131,18 +128,20 @@ struct StampdApp: App {
     var body: some Scene {
         WindowGroup {
             if authManager.isAuthenticated {
+                //user account
                 if let user = authManager.currentUser {
                     if user.accountType == .customer {
                         MainContentView()
                     } else {
-                        // Business account
+                        // business account
                         if authManager.businessNeedsOnboarding {
                             BusinessOnboardingView()
                         } else {
                             BusinessMainContentView()
                         }
                     }
-                } else { //loading
+                    //loading screen
+                } else {
                     ZStack {
                         LinearGradient(
                             gradient: Gradient(colors: [Color.stampdGradientTop, Color.stampdGradientBottom]),

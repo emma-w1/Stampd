@@ -16,16 +16,14 @@ class CustomerProgramFetcher: ObservableObject {
     private var db = Firestore.firestore()
     
     func fetchPrograms(for customerId: String) {
-        print("🔍 Fetching programs for customer: \(customerId)")
         isLoading = true
         
-        // Access subcollection: users/{userId}/programs
+        // access programs
         db.collection("users").document(customerId).collection("programs")
             .getDocuments { [weak self] (querySnapshot, error) in
                 guard let self = self else { return }
                 
                 if let error = error {
-                    print("❌ Error fetching programs: \(error.localizedDescription)")
                     DispatchQueue.main.async {
                         self.isLoading = false
                     }
@@ -38,12 +36,9 @@ class CustomerProgramFetcher: ObservableObject {
                         program.id = document.documentID // businessId
                         return program
                     } catch {
-                        print("❌ Decoding program error: \(error)")
                         return nil
                     }
                 } ?? []
-                
-                print("✅ Found \(programs.count) programs, now fetching business details...")
                 
                 // business details from each program
                 let dispatchGroup = DispatchGroup()
@@ -57,12 +52,10 @@ class CustomerProgramFetcher: ObservableObject {
                         defer { dispatchGroup.leave() }
                         
                         if let error = error {
-                            print("❌ Error fetching business \(businessId): \(error.localizedDescription)")
                             return
                         }
                         
                         guard let document = document, document.exists else {
-                            print("⚠️ Business \(businessId) not found")
                             return
                         }
                         
@@ -71,9 +64,7 @@ class CustomerProgramFetcher: ObservableObject {
                             business.id = document.documentID
                             let combined = ProgramWithBusiness(id: businessId, program: program, business: business)
                             combinedPrograms.append(combined)
-                            print("✅ Loaded business: \(business.businessName)")
                         } catch {
-                            print("❌ Error decoding business: \(error)")
                         }
                     }
                 }
@@ -81,13 +72,12 @@ class CustomerProgramFetcher: ObservableObject {
                 dispatchGroup.notify(queue: .main) {
                     self.programsWithBusinesses = combinedPrograms
                     self.isLoading = false
-                    print("✅ Total combined programs: \(self.programsWithBusinesses.count)")
                 }
             }
     }
 }
 
-// Fetch businesses
+// fetch businesses
 class BusinessDataFetcher: ObservableObject {
     @Published var businesses: [Business] = []
     @Published var isLoading = false
@@ -110,7 +100,6 @@ class BusinessDataFetcher: ObservableObject {
                 self.isLoading = false
                 
                 if let error = error {
-                    print("❌ Error fetching businesses: \(error.localizedDescription)")
                     self.errorMessage = "Failed to fetch businesses."
                     return
                 }

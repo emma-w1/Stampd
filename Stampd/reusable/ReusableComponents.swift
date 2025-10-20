@@ -36,7 +36,7 @@ struct StampdTextField: View {
     }
 }
 
-// Reusable business logo with AsyncImage
+// reusable business logo
 struct BusinessLogoView: View {
     let logoUrl: String
     let size: CGFloat
@@ -75,7 +75,7 @@ struct BusinessLogoView: View {
     }
 }
 
-// Reusable section header
+// reusable section header
 struct SectionHeader: View {
     let text: String
     var size: CGFloat = 36
@@ -88,7 +88,7 @@ struct SectionHeader: View {
     }
 }
 
-// Reusable white info card
+// reusable white info card
 struct WhiteCard<Content: View>: View {
     let content: Content
     
@@ -105,7 +105,7 @@ struct WhiteCard<Content: View>: View {
     }
 }
 
-// Reusable pink button
+// reusable pink button
 struct StampdButton: View {
     let text: String
     let action: () -> Void
@@ -130,7 +130,7 @@ struct StampdButton: View {
     }
 }
 
-// Numbered step component (used in ClaimView and SettingsView)
+// numbered step component
 struct NumberedStep: View {
     let number: String
     let text: String
