@@ -59,8 +59,8 @@ struct SettingsView: View {
                                 
                                 VStack(alignment: .leading, spacing: 12) {
                                     NumberedStep(number: "1", text: "Join loyalty programs through the Discover page")
-                                    NumberedStep(number: "2", text: "Collect stamps by showing cashiers your QR code when checking out")
-                                    NumberedStep(number: "3", text: "Redeem free prize when you collect enough stamps by scanning your QR code")
+                                    NumberedStep(number: "2", text: "Make purchases at affiliated businesses and show your QR Code on claim screen to the cashier.")
+                                    NumberedStep(number: "3", text: "Scan to redeem free prizes when you collect enough stamps!")
                                 }
                             }
                             .padding()
