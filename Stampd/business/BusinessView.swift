@@ -185,6 +185,12 @@ struct BusinessView: View {
                 BusinessEditView(business: business)
             }
         }
+        .onChange(of: showingScanView) { oldValue, newValue in
+            // Refresh stats when scanner closes
+            if oldValue == true && newValue == false {
+                loadTodayStats()
+            }
+        }
         .onChange(of: showingEditView) { oldValue, newValue in
             // refresh data
             if oldValue == true && newValue == false {
@@ -193,6 +199,7 @@ struct BusinessView: View {
         }
         .onAppear {
             fetchBusinessData()
+            loadTodayStats()
         }
     }
     
@@ -214,6 +221,33 @@ struct BusinessView: View {
             self.businessData = business
             self.isLoadingBusiness = false
         }
+    }
+    
+    func loadTodayStats() {
+        guard let businessId = authManager.currentUser?.uid else {
+            return
+        }
+        
+        let today = Calendar.current.startOfDay(for: Date())
+        let dateString = ISO8601DateFormatter().string(from: today)
+        
+        db.collection("businesses")
+            .document(businessId)
+            .collection("dailyRewards")
+            .document(dateString)
+            .getDocument { snapshot, error in
+                DispatchQueue.main.async {
+                    if let data = snapshot?.data() {
+                        // Update rewards and stamps with real data
+                        self.rewardsToday = data["prizesRedeemed"] as? Int ?? 0
+                        self.stampsToday = data["stampsGiven"] as? Int ?? 0
+                    } else {
+                        // No data for today, set to 0
+                        self.rewardsToday = 0
+                        self.stampsToday = 0
+                    }
+                }
+            }
     }
 }
 
