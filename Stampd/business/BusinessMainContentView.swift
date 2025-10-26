@@ -20,6 +20,8 @@ struct BusinessMainContentView: View {
                 SettingsView()
             case .claim:
                 ClaimView()
+            case .analytics:
+                AnalyticsView()
             }
             
             BottomNavbar(selectedTab: $selectedTab)

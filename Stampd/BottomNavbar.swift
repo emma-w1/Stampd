@@ -11,10 +11,12 @@ enum Tab {
     case discover
     case settings
     case claim
+    case analytics
 }
 
 struct BottomNavbar: View {
     @Binding var selectedTab: Tab
+    @EnvironmentObject var authManager: AuthManager
     
     var body: some View {
         HStack {
@@ -29,15 +31,29 @@ struct BottomNavbar: View {
                 .frame(maxWidth: .infinity)
             }
             
-            Button(action: { selectedTab = .claim }) {
-                VStack(spacing: 5) {
-                    Image(systemName: selectedTab == .claim ? "star.circle.fill" : "star.circle")
-                        .font(.system(size: 24))
-                    Text("Claim")
-                        .font(.system(size: 12))
+            // Show Claim for customers, Analytics for businesses
+            if authManager.currentUser?.accountType == .customer {
+                Button(action: { selectedTab = .claim }) {
+                    VStack(spacing: 5) {
+                        Image(systemName: selectedTab == .claim ? "star.circle.fill" : "star.circle")
+                            .font(.system(size: 24))
+                        Text("Claim")
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(selectedTab == .claim ? Color.lightPink : Color.white)
+                    .frame(maxWidth: .infinity)
                 }
-                .foregroundColor(selectedTab == .claim ? Color.lightPink : Color.white)
-                .frame(maxWidth: .infinity)
+            } else {
+                Button(action: { selectedTab = .analytics }) {
+                    VStack(spacing: 5) {
+                        Image(systemName: selectedTab == .analytics ? "chart.bar.fill" : "chart.bar")
+                            .font(.system(size: 24))
+                        Text("Analytics")
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(selectedTab == .analytics ? Color.lightPink : Color.white)
+                    .frame(maxWidth: .infinity)
+                }
             }
             
             Button(action: { selectedTab = .settings }) {
@@ -60,5 +76,6 @@ struct BottomNavbar: View {
 
 #Preview {
     BottomNavbar(selectedTab: .constant(.discover))
+        .environmentObject(AuthManager())
 }
 

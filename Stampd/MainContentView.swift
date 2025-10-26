@@ -20,6 +20,8 @@ struct MainContentView: View {
                 SettingsView()
             case .claim:
                 ClaimView()
+            case .analytics:
+                AnalyticsView()
             }
             
             BottomNavbar(selectedTab: $selectedTab)

@@ -81,22 +81,15 @@ struct PrizeScannerView: View {
             return
         }
         
-        print("🎁 Attempting to redeem prize:")
-        print("   Customer ID: \(customerId)")
-        print("   Business ID: \(businessId)")
-        
         isProcessing = true
         let db = Firestore.firestore()
         
         let programRef = db.collection("users").document(customerId)
             .collection("programs").document(businessId)
         
-        print("📍 Checking path: users/\(customerId)/programs/\(businessId)")
-        
-        // First, get the customer's current program data
+        // get customer program data
         programRef.getDocument { (document, error) in
             if let error = error {
-                print("❌ Error fetching program: \(error.localizedDescription)")
                 self.statusMessage = "Error: Customer not found"
                 self.isProcessing = false
                 self.showSuccess = true
@@ -104,16 +97,13 @@ struct PrizeScannerView: View {
             }
             
             guard let document = document, document.exists else {
-                print("⚠️ Program document does not exist - adding customer to program")
                 self.addCustomerToProgram(customerId: customerId, businessId: businessId)
                 return
             }
             
-            // Get current stamps and check if they can claim a prize
+            // check if they can claim a prize
             let currentStamps = document.data()?["currentStamps"] as? Int ?? 0
             let alreadyClaimed = document.data()?["claimed"] as? Bool ?? false
-            
-            print("✅ Program found - Current stamps: \(currentStamps), Already claimed: \(alreadyClaimed)")
             
             if alreadyClaimed {
                 self.statusMessage = "Customer already claimed their prize"
@@ -122,10 +112,9 @@ struct PrizeScannerView: View {
                 return
             }
             
-            // Get business info to check stampsNeeded
+            // get business info
             db.collection("businesses").document(businessId).getDocument { (businessDoc, businessError) in
                 if let businessError = businessError {
-                    print("❌ Error fetching business info: \(businessError.localizedDescription)")
                     self.statusMessage = "Error: Could not load program info"
                     self.isProcessing = false
                     self.showSuccess = true
@@ -135,21 +124,16 @@ struct PrizeScannerView: View {
                 guard let businessDoc = businessDoc,
                       let businessData = businessDoc.data(),
                       let stampsNeeded = businessData["stampsNeeded"] as? Int else {
-                    print("❌ Could not get stampsNeeded from business")
                     self.statusMessage = "Error: Invalid program configuration"
                     self.isProcessing = false
                     self.showSuccess = true
                     return
                 }
                 
-                print("📊 Program requires \(stampsNeeded) stamps, customer has \(currentStamps)")
-                
-                // Check if customer has enough stamps
+                // check if customer has enough stamps
                 if currentStamps >= stampsNeeded {
-                    // Customer can claim a prize
                     self.processPrizeRedemption(programRef: programRef, customerId: customerId)
                 } else {
-                    // Customer needs more stamps
                     self.statusMessage = "Customer needs \(stampsNeeded - currentStamps) more stamps"
                     self.isProcessing = false
                     self.showSuccess = true
@@ -159,24 +143,19 @@ struct PrizeScannerView: View {
     }
     
     func processPrizeRedemption(programRef: DocumentReference, customerId: String) {
-        print("🎁 Redeeming prize for customer")
-        
-        // Mark as claimed, reset stamps, and increment prizes claimed
+        // mark as claimed, reset stamps and etc
         programRef.updateData([
             "claimed": true,
-            "currentStamps": 0, // Reset stamps after claiming
+            "currentStamps": 0,
             "prizesClaimed": FieldValue.increment(Int64(1))
         ]) { error in
             self.isProcessing = false
             
             if let error = error {
-                print("❌ Error redeeming prize: \(error.localizedDescription)")
                 self.statusMessage = "Failed to redeem prize"
             } else {
-                print("✅ Prize redeemed successfully!")
                 self.statusMessage = "Prize redeemed successfully!"
-                
-                // Also update business analytics
+                self.trackDailyReward(rewardType: "prize", count: 1)
                 self.updateBusinessAnalytics()
             }
             
@@ -190,26 +169,18 @@ struct PrizeScannerView: View {
         let db = Firestore.firestore()
         db.collection("businesses").document(businessId).updateData([
             "rewardsRedeemed": FieldValue.increment(Int64(1))
-        ]) { error in
-            if let error = error {
-                print("❌ Error updating business analytics: \(error.localizedDescription)")
-            } else {
-                print("✅ Business analytics updated")
-            }
-        }
+        ])
     }
     
     func addCustomerToProgram(customerId: String, businessId: String) {
-        print("➕ Adding customer to business program")
-        
         let db = Firestore.firestore()
         let programRef = db.collection("users").document(customerId)
             .collection("programs").document(businessId)
         
-        // Create new program entry with initial values
+        // new program entry
         let programData: [String: Any] = [
             "claimed": false,
-            "currentStamps": 1, // Give them their first stamp
+            "currentStamps": 1,
             "prizesClaimed": 0
         ]
         
@@ -217,14 +188,35 @@ struct PrizeScannerView: View {
             self.isProcessing = false
             
             if let error = error {
-                print("❌ Error adding customer to program: \(error.localizedDescription)")
                 self.statusMessage = "Failed to add customer to program"
             } else {
-                print("✅ Customer added to program with first stamp!")
-                self.statusMessage = "Customer added to program! First stamp given!"
+                self.statusMessage = "Customer added to program! 1st stamp given!"
+                self.trackDailyReward(rewardType: "stamp", count: 1)
             }
             
             self.showSuccess = true
         }
+    }
+    
+    func trackDailyReward(rewardType: String, count: Int) {
+        guard let businessId = authManager.currentUser?.uid else {
+            return 
+        }
+        
+        let db = Firestore.firestore()
+        let today = Calendar.current.startOfDay(for: Date())
+        let dateString = ISO8601DateFormatter().string(from: today)
+        
+        let dailyRewardsRef = db.collection("businesses")
+            .document(businessId)
+            .collection("dailyRewards")
+            .document(dateString)
+        
+        let fieldName = rewardType == "stamp" ? "stampsGiven" : "prizesRedeemed"
+        
+        dailyRewardsRef.setData([
+            "date": Timestamp(date: today),
+            fieldName: FieldValue.increment(Int64(count))
+        ], merge: true)
     }
 }

@@ -9,7 +9,7 @@ struct SmartScannerView: View {
     @State private var scannedCode: String?
     @State private var isScanning = true
     @State private var isProcessing = false
-    @State private var statusMessage = "Scan customer QR code"
+    @State private var statusMessage = "Scan your customer's QR code"
     @State private var showSuccess = false
     @State private var actionTaken = "" 
     
@@ -43,7 +43,7 @@ struct SmartScannerView: View {
                         HStack(spacing: 10) {
                             Image(systemName: actionTaken == "stamp" ? "star.fill" : "gift.fill")
                                 .font(.system(size: 24))
-                                .foregroundColor(.green)
+                                .foregroundColor(Color.pink)
                             
                             Text(actionTaken == "stamp" ? "Stamp Added!" : "Prize Redeemed!")
                                 .font(.custom("Jersey15-Regular", size: 24))
@@ -61,7 +61,7 @@ struct SmartScannerView: View {
                         }
                     }
                     .padding()
-                    .background(Color.black.opacity(0.8))
+                    .background(Color.pink.opacity(0.8))
                     .cornerRadius(15)
                     .padding()
                 }
@@ -130,10 +130,11 @@ struct SmartScannerView: View {
                     self.redeemPrize(programRef: programRef, customerId: userId)
                 } else if currentStamps < stampsNeeded {
                     self.addStamp(programRef: programRef)
+                } else if (document.data()?["claimed"] as? Bool ?? false) {
+                    self.statusMessage = "Customer already claimed their prize, starting over"
+                    self.resetAndAddStamp(programRef: programRef, customerId: userId)
                 } else {
-                    self.statusMessage = "Customer already claimed their prize"
-                    self.isProcessing = false
-                    self.showSuccess = true
+                    self.addStamp(programRef: programRef)
                 }
             }
         }
@@ -151,6 +152,7 @@ struct SmartScannerView: View {
             } else {
                 self.actionTaken = "stamp"
                 self.statusMessage = "Stamp added successfully!"
+                self.trackDailyReward(rewardType: "stamp", count: 1)
             }
             
             self.showSuccess = true
@@ -158,10 +160,10 @@ struct SmartScannerView: View {
     }
     
     func redeemPrize(programRef: DocumentReference, customerId: String) {
-        // reset and add prize 
+        //redeem prize and reset
         programRef.updateData([
-            "claimed": true,
-            "currentStamps": 0,
+            "claimed": false,
+            "currentStamps": 1,
             "prizesClaimed": FieldValue.increment(Int64(1))
         ]) { error in
             self.isProcessing = false
@@ -170,9 +172,29 @@ struct SmartScannerView: View {
                 self.statusMessage = "Failed to redeem prize"
             } else {
                 self.actionTaken = "prize"
-                self.statusMessage = "Prize redeemed successfully!"
-                
+                self.statusMessage = "Prize redeemed successfully! Starting over with 1 stamp!"
+                self.trackDailyReward(rewardType: "prize", count: 1)
                 self.updateBusinessAnalytics()
+            }
+            
+            self.showSuccess = true
+        }
+    }
+    
+    func resetAndAddStamp(programRef: DocumentReference, customerId: String) {
+        // reset and add a stamp if claimed
+        programRef.updateData([
+            "claimed": false,
+            "currentStamps": 1
+        ]) { error in
+            self.isProcessing = false
+            
+            if let error = error {
+                self.statusMessage = "Failed to reset and add stamp"
+            } else {
+                self.actionTaken = "stamp"
+                self.statusMessage = "Starting over! First stamp given!"
+                self.trackDailyReward(rewardType: "stamp", count: 1)
             }
             
             self.showSuccess = true
@@ -211,9 +233,33 @@ struct SmartScannerView: View {
             } else {
                 self.actionTaken = "stamp"
                 self.statusMessage = "Customer added to program! First stamp given!"
+                self.trackDailyReward(rewardType: "stamp", count: 1)
             }
             
             self.showSuccess = true
         }
     }
-}
+    
+    func trackDailyReward(rewardType: String, count: Int) {
+        guard let businessId = authManager.currentUser?.uid else {
+            return 
+        }
+        
+        let db = Firestore.firestore()
+        let today = Calendar.current.startOfDay(for: Date())
+        let dateString = ISO8601DateFormatter().string(from: today)
+        
+        let dailyRewardsRef = db.collection("businesses")
+            .document(businessId)
+            .collection("dailyRewards")
+            .document(dateString)
+        
+        let fieldName = rewardType == "stamp" ? "stampsGiven" : "prizesRedeemed"
+        
+        dailyRewardsRef.setData([
+            "date": Timestamp(date: today),
+            fieldName: FieldValue.increment(Int64(count))
+        ], merge: true)
+        }
+    }
+

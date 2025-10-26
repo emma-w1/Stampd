@@ -30,7 +30,7 @@ struct ClaimView: View {
                     // qr code header/text
                     Text("My QR Code")
                         .font(.custom("Jersey15-Regular", size: 42))
-                        .foregroundColor(Color.stampdTextPink)
+                        .foregroundStyle(Color.stampdTextPink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("Show this QR code to businesses to collect stamps and claim rewards")
                         .font(.system(size: 16))
